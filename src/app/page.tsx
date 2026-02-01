@@ -104,7 +104,7 @@ export default function Home() {
               </span>
             </h1>
             <p className="mx-auto mt-6 max-w-3xl text-xl leading-relaxed text-[#5A6C7D]">
-              Fast internet shouldn't cost a fortune. Get 12 Mbps for just KES 2,000/month — 
+              Fast internet shouldn&apos;t cost a fortune. Get 12 Mbps for just KES 2,000/month — 
               powered by Starlink satellite technology.
             </p>
             <div className="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row">

@@ -136,7 +136,7 @@ export function ReviewsTab() {
                 {renderStars(review.rating)}
               </div>
               {review.content && (
-                <p className="mt-3 text-[#1A1A2E]">"{review.content}"</p>
+                <p className="mt-3 text-[#1A1A2E]">&quot;{review.content}&quot;</p>
               )}
               <p className="mt-2 text-sm text-[#6B7280]">
                 — {review.user.fullName || "Anonymous"} • {review.region} - {review.subLocation} •{" "}
