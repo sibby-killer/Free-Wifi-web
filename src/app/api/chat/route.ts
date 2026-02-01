@@ -60,15 +60,20 @@ export async function POST(req: NextRequest) {
     // Check if message contains @admin
     const mentionAdmin = message.toLowerCase().includes("@admin");
 
-    // Save user message
-    await prisma.chatMessage.create({
-      data: {
-        userId,
-        role: "user",
-        content: message,
-        mentionAdmin,
-      },
-    });
+    // Save user message (using Clerk userId directly)
+    try {
+      await prisma.chatMessage.create({
+        data: {
+          userId,
+          role: "user",
+          content: message,
+          mentionAdmin,
+        },
+      });
+    } catch (dbError) {
+      console.error("Database error saving message:", dbError);
+      // Continue anyway - we can still chat without saving history
+    }
 
     // Get chat history for context (last 10 messages)
     const history = await prisma.chatMessage.findMany({
@@ -104,14 +109,19 @@ export async function POST(req: NextRequest) {
     }
 
     // Save AI response
-    await prisma.chatMessage.create({
-      data: {
-        userId,
-        role: "assistant",
-        content: aiResponse,
-        mentionAdmin: false,
-      },
-    });
+    try {
+      await prisma.chatMessage.create({
+        data: {
+          userId,
+          role: "assistant",
+          content: aiResponse,
+          mentionAdmin: false,
+        },
+      });
+    } catch (dbError) {
+      console.error("Database error saving AI response:", dbError);
+      // Continue anyway - user still gets the response
+    }
 
     // If @admin was mentioned, send notification email
     if (mentionAdmin) {

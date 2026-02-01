@@ -24,7 +24,6 @@ model User {
   orders       Order[]
   tickets      Ticket[]
   reviews      Review[]
-  chatMessages ChatMessage[]
 }
 
 // Admin model
@@ -86,10 +85,9 @@ model Review {
 // AI Chat Message model
 model ChatMessage {
   id           String   @id @default(cuid())
-  userId       String
-  user         User     @relation(fields: [userId], references: [id])
+  userId       String   // Clerk user ID (no foreign key)
   role         String   // "user" or "assistant"
-  content      String
+  content      String   @db.Text
   mentionAdmin Boolean  @default(false)
   createdAt    DateTime @default(now())
 }
