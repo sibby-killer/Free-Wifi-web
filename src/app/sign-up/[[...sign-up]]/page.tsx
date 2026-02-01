@@ -233,6 +233,7 @@ export default function SignUpPage() {
                 <button
                   type="button"
                   onClick={async () => {
+                    if (!isLoaded) return;
                     try {
                       setLoading(true);
                       await signUp.prepareEmailAddressVerification({ strategy: "email_code" });
