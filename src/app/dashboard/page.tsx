@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useUser } from "@clerk/nextjs";
 import { redirect } from "next/navigation";
+import Image from "next/image";
 import { ReviewsTab } from "@/components/ReviewsTab";
 import { ChatTab } from "@/components/ChatTab";
 import { OrdersTab } from "@/components/OrdersTab";
@@ -31,7 +32,7 @@ export default function DashboardPage() {
       <div className="sticky top-0 z-40 bg-white shadow-sm">
         <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
           <div className="flex items-center gap-2">
-            <img src="/logo.jpg" alt="FreeWiFi KE" className="h-10 w-10 rounded-lg object-cover" />
+            <Image src="/logo.jpg" alt="FreeWiFi KE" width={40} height={40} className="rounded-lg object-cover" />
             <span className="text-2xl font-bold text-[#0066FF]">FreeWiFi KE</span>
           </div>
           

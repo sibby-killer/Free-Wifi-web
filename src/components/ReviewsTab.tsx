@@ -30,6 +30,7 @@ export function ReviewsTab() {
 
   useEffect(() => {
     fetchReviews();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [location]);
 
   const fetchReviews = async () => {
@@ -230,7 +231,7 @@ export function ReviewsTab() {
                 <textarea
                   value={formData.content}
                   onChange={(e) => setFormData({ ...formData, content: e.target.value })}
-                  placeholder="Share your experience..."
+                  placeholder="Share your experience"
                   rows={4}
                   className="mt-1 w-full rounded-lg border border-gray-300 px-4 py-2 text-[#1A1A2E] focus:border-[#0066FF] focus:outline-none focus:ring-2 focus:ring-[#0066FF]"
                 />

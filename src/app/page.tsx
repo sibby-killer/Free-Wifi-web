@@ -3,6 +3,7 @@
 import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 import { SignInButton, SignUpButton, useAuth } from "@clerk/nextjs";
 
 export default function Home() {
@@ -48,7 +49,7 @@ export default function Home() {
                 isShaking ? "animate-shake" : ""
               }`}
             >
-              <img src="/logo.jpg" alt="FreeWiFi KE" className="h-10 w-10 rounded-lg object-cover" />
+              <Image src="/logo.jpg" alt="FreeWiFi KE" width={40} height={40} className="rounded-lg object-cover" />
               <span className="text-2xl font-bold text-[#0066FF]">FreeWiFi KE</span>
             </button>
             <div className="hidden items-center gap-8 md:flex">
@@ -149,7 +150,7 @@ export default function Home() {
           <div className="text-center">
             <h2 className="text-4xl font-bold text-[#2D3748]" style={{ fontFamily: 'Georgia, serif' }}>Why Choose FreeWiFi KE?</h2>
             <p className="mx-auto mt-4 max-w-2xl text-lg text-[#5A6C7D]">
-              We're making reliable internet accessible to everyone in Western Kenya
+              We&apos;re making reliable internet accessible to everyone in Western Kenya
             </p>
           </div>
           <div className="mt-16 grid gap-8 md:grid-cols-2 lg:grid-cols-3">
@@ -313,7 +314,7 @@ export default function Home() {
           <div className="text-center">
             <h2 className="text-4xl font-bold text-[#2D3748]" style={{ fontFamily: 'Georgia, serif' }}>Get In Touch</h2>
             <p className="mt-4 text-lg text-[#5A6C7D]">
-              We're here to help you get connected
+              We&apos;re here to help you get connected
             </p>
           </div>
           <div className="mt-12 flex flex-col items-center gap-6">
@@ -335,7 +336,7 @@ export default function Home() {
       <footer className="bg-[#2D3748] py-12 text-white">
         <div className="mx-auto max-w-7xl px-4 text-center sm:px-6 lg:px-8">
           <div className="mb-4 flex items-center justify-center gap-2">
-            <img src="/logo.jpg" alt="FreeWiFi KE" className="h-10 w-10 rounded-lg object-cover" />
+            <Image src="/logo.jpg" alt="FreeWiFi KE" width={40} height={40} className="rounded-lg object-cover" />
             <span className="text-2xl font-bold text-[#A8D5BA]">FreeWiFi KE</span>
           </div>
           <p className="text-[#A0AEC0]">

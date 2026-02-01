@@ -68,13 +68,15 @@ export function SessionTimeout() {
         clearTimeout(timeoutRef.current);
       }
     };
-  }, [isSignedIn, pathname, signOut]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isSignedIn, pathname]);
 
   // Check on route changes
   useEffect(() => {
     if (isSignedIn && !pathname.startsWith("/sign-")) {
       resetTimeout();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pathname, isSignedIn]);
 
   return null; // This component doesn't render anything

@@ -123,7 +123,7 @@ export function ChatTab() {
               </div>
               <div className="max-w-[80%] rounded-2xl bg-gray-100 p-4">
                 <p className="text-[#1A1A2E]">
-                  Hello! I'm your FreeWiFi KE assistant. How can I help you today? 😊
+                  Hello! I&apos;m your FreeWiFi KE assistant. How can I help you today? 😊
                   <br />
                   <br />
                   💡 <strong>Tip:</strong> Type <code className="rounded bg-gray-200 px-1">@admin</code> in your message to get human support!
