@@ -1,0 +1,913 @@
+🎯## 📋 PROJECT OVERVIEW
+
+Build a production-ready Next.js website for **"FreeWiFi KE"** — a WiFi hotspot installation and support business operating in Kakamega and Bungoma, Kenya.
+
+**Purpose:** Online office + support desk for customers to sign up, order plans, report issues, chat with AI support, and leave reviews.
+
+**Live Locations:**
+- Kakamega (Main Office)
+- Bungoma (Branch)
+
+**Contact:**
+- WhatsApp: 0762667048, 0768294174
+- Email: freewifiv4@gmail.com
+
+---
+
+## 🎨 V — VISUALS
+
+### Overall Vibe
+- **Style:** Modern, clean, mobile-first (TikTok-inspired navigation)
+- **Feel:** Trustworthy, fast, tech-forward, Kenyan-friendly
+- **Mode:** Light mode default with optional dark mode toggle
+
+### Color Palette
+Primary: #0066FF (Electric Blue)
+Secondary: #00CC88 (Success Green)
+Accent: #FF6600 (Orange for CTAs)
+Background: #F5F7FA (Light Gray)
+Dark Mode BG: #121212
+Text Primary: #1A1A2E
+Text Secondary: #6B7280
+Error: #EF4444
+Warning: #F59E0B
+Success: #10B981
+
+text
+
+
+### Typography
+Headings: Inter Bold (or Poppins Bold)
+Body: Inter Regular
+Buttons: Inter Semi-Bold
+Sizes: H1: 32px, H2: 24px, H3: 18px, Body: 16px, Small: 14px
+
+text
+
+
+### Layout Structure
+
+**Landing Page (Public):**
+- Hero section with brand message
+- "Get Connected Today" CTA
+- Plans preview cards
+- Coverage areas
+- Trust badges
+- Footer with contacts
+
+**Auth Pages:**
+- Centered card layout
+- Clean form inputs with labels
+- Password strength bar (red → yellow → green)
+- Eye toggle icon for password visibility
+- Disabled button until form is valid
+
+**User Dashboard (After Login):**
+- **TikTok-style bottom navigation bar** with 4 tabs:
+[📊 Dashboard] [⭐ Reviews] [🤖 AI Chat] [📦 Orders]
+
+text
+
+- Top bar: Logo + User avatar + Settings icon
+- Content area scrollable
+- Floating WhatsApp button (bottom-right, above nav)
+
+**Admin Dashboard:**
+- Sidebar navigation (desktop)
+- Bottom nav (mobile)
+- Data tables for requests
+- Status badges (New, In Progress, Completed)
+- Quick action buttons
+
+### Components & Micro-interactions
+
+- **Buttons:** Slight scale on hover (1.02), ripple on click
+- **Cards:** Subtle shadow, hover lift effect
+- **Forms:** Focus ring animation, inline validation
+- **Password Bar:** Animated width + color transition
+- **Tabs:** Smooth underline slide animation
+- **Modals:** Fade in + scale up
+- **Toast Notifications:** Slide in from top-right
+- **Loading States:** Skeleton loaders, spinner for buttons
+
+### Mobile Responsiveness
+
+- Mobile-first design
+- Bottom navigation fixed (60px height)
+- Touch-friendly buttons (min 44px tap target)
+- Swipe gestures for tab switching
+- Collapsible sections on mobile
+
+---
+
+## 🧠 I — INTERFACE (User Flows & Logic)
+
+### 1️⃣ LANDING PAGE FLOW
+
+**Components:**
+- Navbar: Logo, About, Plans, Contact, Login/Sign Up buttons
+- Hero: Headline, subtext, "Get Started" button
+- Plans Section: 2 cards (10 Mbps, 12 Mbps)
+- Coverage Section: Kakamega & Bungoma listed
+- Footer: Contact info, WhatsApp links, copyright
+
+**Secret Admin Access:**
+- When user clicks the **logo/company name 4 times consecutively** within 2 seconds → Redirect to `/admin/auth` page
+- Show subtle visual feedback on 3rd click (slight shake)
+- No visible admin link anywhere on public site
+
+---
+
+### 2️⃣ USER REGISTRATION FLOW (`/signup`)
+
+**Step-by-Step Form:**
+STEP 1: Location Selection
+├── Label: "Select Your Area"
+├── Dropdown 1: Region
+│ ├── Kakamega
+│ └── Bungoma
+│
+├── Dropdown 2: Sub-location (dynamic based on Region)
+│ ├── IF Kakamega selected:
+│ │ ├── Lurambi
+│ │ ├── Koro
+│ │ ├── Milimani
+│ │ └── Others (shows text input for custom location)
+│ │
+│ └── IF Bungoma selected:
+│ ├── Marel
+│ ├── Bridge
+│ ├── Kanduyi
+│ └── Others (shows text input for custom location)
+
+STEP 2: Personal Information
+├── Full Name (required, min 3 characters)
+├── Email Address (required, valid format)
+├── Phone Number (required, starts with 07 or 01, 10 digits)
+
+STEP 3: Account Credentials
+├── Username
+│ ├── Required
+│ ├── Min 4 characters
+│ ├── Must contain letters + numbers (e.g., "Alfred10")
+│ ├── Real-time uniqueness check via API
+│ ├── IF username exists:
+│ │ ├── Show error: "Username already exists"
+│ │ └── Show AI suggestion: "Try: Alfred_2024, AlfredKE, Alfred_wifi"
+│ └── Green checkmark when available
+│
+├── Password
+│ ├── Required
+│ ├── Min 8 characters
+│ ├── Must contain: uppercase, lowercase, number, special character
+│ ├── Password Strength Bar:
+│ │ ├── Weak (red, 25% width): < 8 chars OR missing requirements
+│ │ ├── Fair (orange, 50% width): 8+ chars, 2 requirements met
+│ │ ├── Good (yellow, 75% width): 8+ chars, 3 requirements met
+│ │ └── Strong (green, 100% width): 8+ chars, all requirements met
+│ └── Text label below bar showing current strength
+│
+├── Confirm Password
+│ ├── Must match password
+│ ├── Eye icon toggle to show/hide both password fields
+│ └── Error if mismatch: "Passwords do not match"
+
+STEP 4: Submit
+├── "Create Account" button
+│ ├── DISABLED until:
+│ │ ├── All fields filled
+│ │ ├── Password strength = "Strong"
+│ │ ├── Passwords match
+│ │ └── Username is unique
+│ └── ENABLED: Blue background, clickable
+│
+└── On Submit:
+├── Show loading spinner
+├── Create user in database
+├── Send welcome email
+├── Redirect to /login with success toast
+└── IF error: Show inline error message
+
+text
+
+
+**Validation Errors:**
+- Empty field: "This field is required"
+- Invalid email: "Please enter a valid email"
+- Username taken: "Username already exists. Try: [AI suggestions]"
+- Weak password: "Password must be strong to continue"
+- Password mismatch: "Passwords do not match"
+
+---
+
+### 3️⃣ USER LOGIN FLOW (`/login`)
+
+**Form Fields:**
+├── Login Method Toggle (tabs or radio):
+│ ├── [Username] (default, highlighted)
+│ └── [Email]
+│
+├── Username/Email Input (changes label based on toggle)
+├── Password Input (with eye toggle)
+├── "Remember Me" checkbox
+├── "Forgot Password?" link
+└── "Login" button
+
+On Submit:
+├── Validate credentials
+├── IF success: Redirect to /dashboard
+├── IF fail: Show error "Invalid username/password"
+└── IF account not found: "Account not found. Sign up?"
+
+text
+
+
+---
+
+### 4️⃣ USER DASHBOARD (`/dashboard`)
+
+**Bottom Navigation Tabs (TikTok-style):**
+[📊 Dashboard] [⭐ Reviews] [🤖 AI Chat] [📦 Orders]
+
+text
+
+
+---
+
+#### TAB 1: 📊 Dashboard (Home)
+
+**Content:**
+- Welcome message: "Hello, [First Name]! 👋"
+- Current Plan Card:
+  - Plan name (or "No active plan")
+  - Data usage (if applicable)
+  - Expiry date
+  - "Upgrade" button
+- Quick Actions:
+  - "Order New Plan"
+  - "Report Problem"
+  - "Contact Support"
+- Recent Activity (last 3 items)
+- Account Info Summary
+
+---
+
+#### TAB 2: ⭐ Reviews
+
+**Purpose:** Show reviews from users in same region/sub-location
+
+**Content:**
+- Filter dropdown: "All Areas" / "Lurambi" / "Koro" / etc.
+- Review cards:
+┌─────────────────────────────────────┐
+│ ⭐⭐⭐⭐⭐ 5/5 │
+│ "Great service, fast installation" │
+│ — John M. • Lurambi • 2 days ago │
+└─────────────────────────────────────┘
+
+text
+
+- "Write a Review" button (opens modal)
+- Star rating (1-5, required)
+- Text review (optional, max 500 chars)
+- Location auto-filled from user profile
+- Submit → Shows in reviews list
+
+---
+
+#### TAB 3: 🤖 AI Chat
+
+**Purpose:** AI assistant for company-related questions only
+
+**UI Layout:**
+- Chat bubble interface (like ChatGPT/WhatsApp)
+- User messages: Right-aligned, blue bubbles
+- AI messages: Left-aligned, gray bubbles
+- Input bar at bottom with send button
+
+**AI Behavior (using Groq):**
+SYSTEM PROMPT FOR AI:
+"You are the FreeWiFi KE virtual assistant. You ONLY answer questions about:
+
+WiFi plans and pricing (10 Mbps = KES 1,500, 12 Mbps = KES 2,000)
+Installation process
+Coverage areas (Kakamega: Lurambi, Koro, Milimani | Bungoma: Marel, Bridge, Kanduyi)
+Troubleshooting (slow internet, no connection, router issues)
+Account and billing questions
+Company contact info
+If asked anything unrelated, respond:
+'I can only help with FreeWiFi KE services. Please ask about our plans, installation, or support.'
+
+Be friendly, helpful, and concise. Use emojis occasionally."
+
+text
+
+
+**@Admin Mention Feature:**
+- If user types `@admin` anywhere in message:
+  - Show confirmation: "Request human support?"
+  - If confirmed:
+    - Send email to `freewifiv4@gmail.com` with:
+      - Subject: "Customer Support Request from [Username]"
+      - Body: User's message, location, email, timestamp
+      - Link to admin dashboard
+    - Show message: "An admin has been notified. We'll respond via email or WhatsApp soon."
+- AI responds: "I've notified our team. A human admin will reach out shortly."
+
+---
+
+#### TAB 4: 📦 Orders
+
+**Purpose:** Order new installation or upgrade plan
+
+**Order Form:**
+├── Plan Selection (radio cards):
+│ ├── 🔹 10 Mbps — KES 1,500/month
+│ │ └── "Good for browsing & social media"
+│ └── 🔹 12 Mbps — KES 2,000/month
+│ └── "Best for streaming & gaming"
+│
+├── Installation Details:
+│ ├── Region: [Auto-filled from profile, editable]
+│ ├── Sub-location: [Auto-filled, editable]
+│ ├── Specific Address/Landmark (text input)
+│ ├── Google Maps Link (optional)
+│ └── Preferred Installation Date (date picker, future dates only)
+│
+├── Contact Preference:
+│ ├── WhatsApp Number Dropdown:
+│ │ ├── 0762667048
+│ │ └── 0768294174
+│ └── Selected number used for WhatsApp link
+│
+├── Additional Notes (optional textarea)
+│
+└── "Submit Order" button
+├── On submit:
+│ ├── Save to database
+│ ├── Send email notification to admin (freewifiv4@gmail.com)
+│ ├── Show success modal with order ID
+│ └── Option to "Contact via WhatsApp" with pre-filled message
+└── Pre-filled WhatsApp message:
+"Hello FreeWiFi KE! I just submitted an order.
+Order ID: #[ID]
+Plan: [Selected Plan]
+Location: [Location]
+Please confirm my installation. Thank you!"
+
+text
+
+
+**Order History:**
+- Below form, show "My Orders" section
+- Status badges: 🟡 Pending, 🔵 In Progress, 🟢 Completed, 🔴 Cancelled
+- Order cards with details and status
+
+---
+
+### 5️⃣ REPORT PROBLEM FLOW
+
+**Accessible from:** Dashboard quick actions OR floating button
+
+**Form:**
+├── Problem Type (dropdown):
+│ ├── No Internet
+│ ├── Slow Speed
+│ ├── Router Issue
+│ ├── Billing Issue
+│ └── Other
+│
+├── Description (textarea, required)
+├── Urgency (radio):
+│ ├── Low - Can wait
+│ ├── Medium - Need help today
+│ └── High - No internet at all
+│
+└── Submit
+├── Save to database
+├── Email admin
+└── Show confirmation with ticket number
+
+text
+
+
+---
+
+### 6️⃣ ADMIN AUTHENTICATION (`/admin/auth`)
+
+**Access Method:**
+- Click logo/company name **4 times consecutively** on landing page
+- Redirects to `/admin/auth`
+
+**Admin Signup Form:**
+├── Full Name
+├── Admin Email (must be verified)
+├── Password (same strength requirements)
+├── Confirm Password
+├── Secret Admin Code (hardcoded or env variable for security)
+└── "Create Admin Account" button
+
+text
+
+
+**Admin Login:**
+- Email + Password
+- "Login" button
+- Redirect to `/admin/dashboard`
+
+---
+
+### 7️⃣ ADMIN DASHBOARD (`/admin/dashboard`)
+
+**Sidebar Navigation:**
+├── 📊 Overview
+├── 📦 Orders
+├── 🎫 Support Tickets
+├── 👥 Users
+├── ⭐ Reviews (moderate)
+├── 💬 AI Chat Logs
+└── ⚙️ Settings
+
+text
+
+
+**Overview Page:**
+- Stats cards:
+  - Total Users
+  - Pending Orders
+  - Open Tickets
+  - This Month's Revenue
+- Recent Orders table
+- Recent Support Requests
+
+**Orders Management:**
+- Table with columns: Order ID, User, Plan, Location, Date, Status, Actions
+- Filter by: Status, Location, Date
+- Actions: View Details, Update Status, Add Notes
+- Status options: Pending → In Progress → Completed / Cancelled
+
+**Support Tickets:**
+- Table: Ticket ID, User, Problem Type, Urgency, Status, Date
+- Click to view full conversation
+- Add admin response
+- Update status: Open → In Progress → Resolved
+
+**Users Management:**
+- Table: Name, Username, Email, Location, Plan, Joined Date
+- Click to view profile
+- Edit user details
+- Suspend/Activate account
+
+**Reviews Moderation:**
+- Approve/Reject new reviews
+- Delete inappropriate reviews
+
+**AI Chat Logs:**
+- View conversations where @admin was mentioned
+- Respond directly (sends email to user)
+
+**Settings:**
+- Update admin password
+- Notification preferences
+- WhatsApp numbers management
+
+---
+
+## 🧰 B — BACKEND
+
+### Tech Stack
+Framework: Next.js 14+ (App Router)
+Styling: Tailwind CSS
+UI Components: shadcn/ui
+Hosting: Vercel
+Database: PostgreSQL (via Supabase or Neon)
+ORM: Prisma
+Auth: NextAuth.js (separate user/admin auth)
+AI: Groq API (Llama 3 or Mixtral)
+Email: Resend or Nodemailer
+File Storage: Not needed (no uploads)
+
+text
+
+
+### Database Schema (Prisma)
+
+```prisma
+// User model
+model User {
+  id             String   @id @default(cuid())
+  fullName       String
+  username       String   @unique
+  email          String   @unique
+  phone          String
+  password       String   // hashed
+  region         String   // Kakamega or Bungoma
+  subLocation    String
+  customLocation String?  // if "Others" selected
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  
+  orders         Order[]
+  tickets        Ticket[]
+  reviews        Review[]
+  chatMessages   ChatMessage[]
+}
+
+// Admin model
+model Admin {
+  id        String   @id @default(cuid())
+  fullName  String
+  email     String   @unique
+  password  String   // hashed
+  createdAt DateTime @default(now())
+}
+
+// Order model
+model Order {
+  id              String   @id @default(cuid())
+  userId          String
+  user            User     @relation(fields: [userId], references: [id])
+  plan            String   // "10mbps" or "12mbps"
+  price           Int      // 1500 or 2000
+  region          String
+  subLocation     String
+  address         String
+  mapsLink        String?
+  preferredDate   DateTime
+  whatsappNumber  String
+  notes           String?
+  status          String   @default("pending") // pending, in_progress, completed, cancelled
+  adminNotes      String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+// Support Ticket model
+model Ticket {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id])
+  problemType String
+  description String
+  urgency     String   // low, medium, high
+  status      String   @default("open") // open, in_progress, resolved
+  adminNotes  String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+// Review model
+model Review {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id])
+  rating      Int      // 1-5
+  content     String?
+  region      String
+  subLocation String
+  approved    Boolean  @default(false)
+  createdAt   DateTime @default(now())
+}
+
+// AI Chat Message model
+model ChatMessage {
+  id           String   @id @default(cuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id])
+  role         String   // "user" or "assistant"
+  content      String
+  mentionAdmin Boolean  @default(false)
+  createdAt    DateTime @default(now())
+}
+API Routes
+text
+
+AUTH:
+POST   /api/auth/signup          - User registration
+POST   /api/auth/login           - User login
+POST   /api/auth/admin/signup    - Admin registration
+POST   /api/auth/admin/login     - Admin login
+GET    /api/auth/check-username  - Check username availability
+POST   /api/auth/logout          - Logout
+
+USERS:
+GET    /api/users/me             - Get current user profile
+PUT    /api/users/me             - Update profile
+GET    /api/admin/users          - Get all users (admin)
+GET    /api/admin/users/:id      - Get single user (admin)
+
+ORDERS:
+POST   /api/orders               - Create order
+GET    /api/orders/my            - Get user's orders
+GET    /api/admin/orders         - Get all orders (admin)
+PUT    /api/admin/orders/:id     - Update order status (admin)
+
+TICKETS:
+POST   /api/tickets              - Create support ticket
+GET    /api/tickets/my           - Get user's tickets
+GET    /api/admin/tickets        - Get all tickets (admin)
+PUT    /api/admin/tickets/:id    - Update ticket (admin)
+
+REVIEWS:
+POST   /api/reviews              - Create review
+GET    /api/reviews              - Get approved reviews (with location filter)
+GET    /api/admin/reviews        - Get all reviews (admin)
+PUT    /api/admin/reviews/:id    - Approve/reject review (admin)
+
+AI CHAT:
+POST   /api/chat                 - Send message to AI
+GET    /api/chat/history         - Get user's chat history
+POST   /api/chat/mention-admin   - Trigger admin notification
+GET    /api/admin/chat-logs      - Get flagged conversations (admin)
+
+EMAIL:
+POST   /api/email/send           - Internal email sending
+AI Integration (Groq)
+JavaScript
+
+// AI Chat System Prompt
+const systemPrompt = `You are the FreeWiFi KE virtual assistant.
+
+ABOUT THE COMPANY:
+- WiFi hotspot installation service in Kenya
+- Locations: Kakamega (Lurambi, Koro, Milimani) and Bungoma (Marel, Bridge, Kanduyi)
+- Plans: 10 Mbps at KES 1,500/month, 12 Mbps at KES 2,000/month
+- Contact: WhatsApp 0762667048 or 0768294174 , Email freewifiv4@gmail.com
+
+ The Problem
+In Western Kenya, internet is expensive and unreliable. Our competitors charge KES 2,500/month for just 8Mbps. Many families, students, and small businesses simply cannot afford it.
+
+We started FreeWiFi KE to change that.
+
+💡 Our Solution
+We partnered with Starlink to bring satellite internet to Kakamega and Bungoma at prices everyone can afford:
+
+Plan	Speed	Price
+Basic	10 Mbps	KES 1,500/month
+Premium	12 Mbps	KES 2,000/month
+Additional:
+
+📡 Router: KES 1,200 (one-time) or FREE if you have your own
+🔧 Installation: FREE within coverage areas
+📞 Support: 24/7 via WhatsApp, Email, AI Chat
+
+YOU CAN HELP WITH:
+- Explaining plans and pricing
+- Installation process and timeline
+- Coverage area questions
+- Basic troubleshooting (restart router, check cables, speed issues)
+- Account and billing inquiries
+- Directing users to order or report problems
+
+YOU CANNOT HELP WITH:
+- Anything unrelated to FreeWiFi KE
+- Technical backend issues (tell them to @admin)
+- Refunds or billing disputes (tell them to @admin)
+- Personal advice unrelated to the service
+
+TONE: Friendly, helpful, professional. Use simple English. Occasionally use emojis.
+
+If user mentions @admin, acknowledge that a human will be contacted.`;
+Email Templates
+1. Welcome Email:
+
+text
+
+Subject: Welcome to FreeWiFi KE! 🎉
+
+Hi [Name],
+
+Your account has been created successfully!
+
+Username: [username]
+Location: [region] - [subLocation]
+
+Ready to get connected? Order your plan now!
+
+— The FreeWiFi KE Team
+2. Order Confirmation:
+
+text
+
+Subject: Order Received - #[OrderID]
+
+Hi [Name],
+
+We've received your installation order:
+
+Plan: [Plan]
+Location: [Address]
+Preferred Date: [Date]
+
+Our team will contact you shortly via WhatsApp.
+
+— FreeWiFi KE
+3. Admin Notification (Order):
+
+text
+
+Subject: 🆕 New Order - #[OrderID]
+
+New installation order received:
+
+Customer: [Name]
+Phone: [Phone]
+Plan: [Plan]
+Location: [Region] - [SubLocation]
+Address: [Address]
+Preferred Date: [Date]
+
+Login to dashboard: [Admin Dashboard Link]
+4. Admin Mention Notification:
+
+text
+
+Subject: 🚨 Customer Needs Help - [Username]
+
+A customer has requested human support:
+
+User: [Name] ([Username])
+Email: [Email]
+Location: [Location]
+Message: "[User's message]"
+Timestamp: [DateTime]
+
+Respond via dashboard: [Link]
+Or reply to: [User Email]
+Username Suggestion AI
+JavaScript
+
+// When username is taken, generate suggestions
+async function generateUsernameSuggestions(attemptedUsername) {
+  const suggestions = [
+    `${attemptedUsername}_${new Date().getFullYear()}`,
+    `${attemptedUsername}KE`,
+    `${attemptedUsername}_wifi`,
+    `${attemptedUsername}${Math.floor(Math.random() * 999)}`,
+  ];
+  return suggestions.slice(0, 3);
+}
+Password Strength Calculator
+JavaScript
+
+function calculatePasswordStrength(password) {
+  let strength = 0;
+  
+  if (password.length >= 8) strength++;
+  if (/[a-z]/.test(password)) strength++;
+  if (/[A-Z]/.test(password)) strength++;
+  if (/[0-9]/.test(password)) strength++;
+  if (/[^a-zA-Z0-9]/.test(password)) strength++;
+  
+  if (strength <= 2) return { level: 'weak', percent: 25, color: 'red' };
+  if (strength === 3) return { level: 'fair', percent: 50, color: 'orange' };
+  if (strength === 4) return { level: 'good', percent: 75, color: 'yellow' };
+  return { level: 'strong', percent: 100, color: 'green' };
+}
+WhatsApp Integration
+JavaScript
+
+// Generate WhatsApp link with pre-filled message
+function generateWhatsAppLink(phoneNumber, message) {
+  const formattedPhone = phoneNumber.replace(/^0/, '254'); // Convert 07... to 254...
+  const encodedMessage = encodeURIComponent(message);
+  return `https://wa.me/${formattedPhone}?text=${encodedMessage}`;
+}
+🚫 E — EXCLUSIONS
+DO NOT:
+Technical:
+
+❌ Do NOT integrate FreeRADIUS or any bandwidth management
+❌ Do NOT build payment gateway (orders are manual confirmation)
+❌ Do NOT create real-time notifications (email is enough)
+❌ Do NOT implement WebSockets for chat (simple API polling is fine)
+❌ Do NOT use complex state management (React Context is enough)
+❌ Do NOT add file upload functionality
+❌ Do NOT implement SMS sending (WhatsApp + Email only)
+Features:
+Do not us anyother auth i want clerk 
+❌ Do NOT build a mobile app (responsive website only)
+❌ Do NOT create user-to-user chat
+❌ Do NOT add video calling or live support
+❌ Do NOT implement subscription auto-renewal
+❌ Do NOT track bandwidth or data usage
+❌ Do NOT create referral or affiliate system (for now)
+Scope:
+
+❌ Do NOT overengineer the AI (simple FAQ assistant only)
+❌ Do NOT build analytics dashboard (basic stats only)
+❌ Do NOT implement A/B testing
+❌ Do NOT add multi-language support (English only)
+❌ Do NOT create blog or CMS
+Security:
+
+❌ Do NOT store passwords in plain text (use bcrypt)
+❌ Do NOT expose admin routes publicly
+❌ Do NOT allow admin creation without secret code
+❌ Do NOT skip input validation on any form
+Performance:
+
+❌ Do NOT lazy load critical above-fold content
+❌ Do NOT use heavy animation libraries
+❌ Do NOT load unnecessary fonts
+📁 FILE STRUCTURE
+text
+
+/app
+  /(public)
+    /page.tsx                 # Landing page
+    /plans/page.tsx           # Plans page
+  /(auth)
+    /login/page.tsx           # User login
+    /signup/page.tsx          # User signup
+  /(dashboard)
+    /dashboard/page.tsx       # User dashboard (with tabs)
+  /(admin)
+    /admin/auth/page.tsx      # Admin login/signup
+    /admin/dashboard/page.tsx # Admin dashboard
+    /admin/orders/page.tsx
+    /admin/tickets/page.tsx
+    /admin/users/page.tsx
+    /admin/reviews/page.tsx
+  /api
+    /auth/[...routes]
+    /orders/[...routes]
+    /tickets/[...routes]
+    /reviews/[...routes]
+    /chat/[...routes]
+/components
+  /ui                         # shadcn components
+  /forms                      # Form components
+  /dashboard                  # Dashboard components
+  /admin                      # Admin components
+/lib
+  /db.ts                      # Prisma client
+  /auth.ts                    # Auth utilities
+  /ai.ts                      # Groq integration
+  /email.ts                   # Email utilities
+  /utils.ts                   # Helper functions
+/prisma
+  /schema.prisma
+✅ FINAL CHECKLIST
+Before deploying, ensure:
+
+ All forms have validation
+ Password strength bar works
+ Username uniqueness check works
+ Location dropdowns are dynamic
+ Bottom navigation works on mobile
+ AI only answers company questions
+ @admin sends email notification
+ WhatsApp links work with correct numbers
+ Admin secret access (4 clicks) works
+ Admin dashboard shows all data
+ Email notifications send correctly
+ All pages are mobile responsive
+ Error handling on all API routes
+ Loading states on all buttons/forms
+
+🎯 SUMMARY
+This prompt instructs the AI to build a complete WiFi hotspot business website with:
+
+Feature	Description
+Landing Page	Brand showcase with secret admin access (4 clicks on logo)
+User Auth	Signup with location selection, password strength bar, username validation
+User Dashboard	TikTok-style bottom nav with 4 tabs
+Reviews	Location-based reviews from real customers
+AI Chat	Groq-powered assistant with @admin mention feature
+Orders	Installation request form with WhatsApp integration
+Admin Dashboard	Full management of orders, tickets, users, reviews
+Notifications	Email alerts to freewifiv4@gmail.com
+Locations Covered:
+
+Kakamega: Lurambi, Koro, Milimani, Others
+Bungoma: Marel, Bridge, Kanduyi, Others
+Contact Numbers:
+
+WhatsApp 1: 0762667048
+WhatsApp 2: 0768294174
+Email: freewifiv4@gmail.com
+
+✅ FINAL CHECKLIST
+Before deploying, ensure:
+
+ All forms have validation
+ Password strength bar works
+ Username uniqueness check works
+ Location dropdowns are dynamic
+ Bottom navigation works on mobile
+ AI only answers company questions
+ @admin sends email notification
+ WhatsApp links work with correct numbers
+ Admin secret access (4 clicks) works
+ Admin dashboard shows all data
+ Email notifications send correctly
+ All pages are mobile responsive
+ Error handling on all API routes
+ Loading states on all buttons/forms
+🚀 DEPLOY
+Push to GitHub
+Connect to Vercel
+Add environment variables:
+
+
