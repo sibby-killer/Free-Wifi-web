@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { generateWhatsAppLink, formatDate, REGIONS } from "@/lib/utils";
+import { OrderIcon, WifiIcon } from "@/components/ui/Icons";
 
 interface Order {
   id: string;
@@ -9,7 +10,6 @@ interface Order {
   price: number;
   region: string;
   subLocation: string;
-  address: string;
   preferredDate: string;
   status: string;
   createdAt: string;
@@ -24,8 +24,7 @@ export function OrdersTab() {
     price: 0,
     region: "",
     subLocation: "",
-    address: "",
-    mapsLink: "",
+    customSubLocation: "",
     preferredDate: "",
     whatsappNumber: "0762667048",
     notes: "",
@@ -56,41 +55,55 @@ export function OrdersTab() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.plan || !formData.region || !formData.subLocation || !formData.address || !formData.preferredDate) {
+
+    // Validate base fields
+    if (!formData.plan || !formData.region || !formData.subLocation || !formData.preferredDate) {
       alert("Please fill in all required fields");
+      return;
+    }
+
+    // Validate custom location if "Others" is selected
+    if (formData.subLocation === "Others" && !formData.customSubLocation.trim()) {
+      alert("Please specify your location");
       return;
     }
 
     try {
       setSubmitting(true);
+
+      // Use custom location if "Others" is selected
+      const finalSubLocation = formData.subLocation === "Others" ? formData.customSubLocation : formData.subLocation;
+
       const res = await fetch("/api/orders", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({
+          ...formData,
+          subLocation: finalSubLocation,
+        }),
       });
 
       if (res.ok) {
         const data = await res.json();
         alert("Order submitted successfully! We'll contact you soon via WhatsApp.");
-        
+
         // Open WhatsApp with pre-filled message
-        const whatsappMessage = `Hi! I just placed an order (#${data.order.id}) for ${formData.plan} plan. My address is: ${formData.address}, ${formData.subLocation}, ${formData.region}. Preferred date: ${formData.preferredDate}`;
+        const whatsappMessage = `Hi! I just placed an order (#${data.order.id}) for ${formData.plan} plan. Location: ${finalSubLocation}, ${formData.region}. Preferred date: ${formData.preferredDate}`;
         const whatsappLink = generateWhatsAppLink(formData.whatsappNumber, whatsappMessage);
         window.open(whatsappLink, "_blank");
-        
+
         // Reset form
         setFormData({
           plan: "",
           price: 0,
           region: "",
           subLocation: "",
-          address: "",
-          mapsLink: "",
+          customSubLocation: "",
           preferredDate: "",
           whatsappNumber: "0762667048",
           notes: "",
         });
-        
+
         fetchOrders();
       } else {
         const data = await res.json();
@@ -111,8 +124,13 @@ export function OrdersTab() {
 
   return (
     <div>
-      <h1 className="text-3xl font-bold text-[#1A1A2E]">Orders 📦</h1>
-      <p className="mt-2 text-[#6B7280]">Order a new plan or view your order history</p>
+      <div className="flex items-center gap-3">
+        <OrderIcon size={32} />
+        <div>
+          <h1 className="text-3xl font-bold text-[#1A1A2E]">Orders</h1>
+          <p className="text-[#6B7280]">Order a new plan or view your order history</p>
+        </div>
+      </div>
 
       {/* Order Form */}
       <form onSubmit={handleSubmit} className="mt-6 rounded-2xl bg-white p-6 shadow-md">
@@ -133,7 +151,9 @@ export function OrdersTab() {
                 className="peer sr-only"
               />
               <div className="rounded-xl border-2 border-gray-200 p-4 transition-all peer-checked:border-[#0066FF] peer-checked:bg-blue-50">
-                <div className="font-semibold text-[#1A1A2E]">🔹 10 Mbps</div>
+                <div className="flex items-center gap-2 font-semibold text-[#1A1A2E]">
+                  <WifiIcon size={18} className="text-[#0066FF]" /> 10 Mbps
+                </div>
                 <div className="mt-1 text-2xl font-bold text-[#0066FF]">KES 1,500/month</div>
                 <div className="mt-1 text-sm text-[#6B7280]">Good for browsing & social media</div>
               </div>
@@ -147,7 +167,9 @@ export function OrdersTab() {
                 className="peer sr-only"
               />
               <div className="rounded-xl border-2 border-gray-200 p-4 transition-all peer-checked:border-[#0066FF] peer-checked:bg-blue-50">
-                <div className="font-semibold text-[#1A1A2E]">🔹 12 Mbps</div>
+                <div className="flex items-center gap-2 font-semibold text-[#1A1A2E]">
+                  <WifiIcon size={18} className="text-[#0066FF]" /> 12 Mbps
+                </div>
                 <div className="mt-1 text-2xl font-bold text-[#0066FF]">KES 2,000/month</div>
                 <div className="mt-1 text-sm text-[#6B7280]">Best for streaming & gaming</div>
               </div>
@@ -179,7 +201,7 @@ export function OrdersTab() {
             </label>
             <select
               value={formData.subLocation}
-              onChange={(e) => setFormData({ ...formData, subLocation: e.target.value })}
+              onChange={(e) => setFormData({ ...formData, subLocation: e.target.value, customSubLocation: "" })}
               className="mt-1 w-full rounded-lg border border-gray-300 px-4 py-2 text-[#1A1A2E] focus:border-[#0066FF] focus:outline-none focus:ring-2 focus:ring-[#0066FF]"
               required
               disabled={!formData.region}
@@ -193,32 +215,22 @@ export function OrdersTab() {
             </select>
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-[#1A1A2E]">
-              Specific Address/Landmark <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="text"
-              value={formData.address}
-              onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-              placeholder="Enter your address"
-              className="mt-1 w-full rounded-lg border border-gray-300 px-4 py-2 text-[#1A1A2E] focus:border-[#0066FF] focus:outline-none focus:ring-2 focus:ring-[#0066FF]"
-              required
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-[#1A1A2E]">
-              Google Maps Link (Optional)
-            </label>
-            <input
-              type="url"
-              value={formData.mapsLink}
-              onChange={(e) => setFormData({ ...formData, mapsLink: e.target.value })}
-              placeholder="https://maps.google.com/..."
-              className="mt-1 w-full rounded-lg border border-gray-300 px-4 py-2 text-[#1A1A2E] focus:border-[#0066FF] focus:outline-none focus:ring-2 focus:ring-[#0066FF]"
-            />
-          </div>
+          {/* Custom Sub-location (if Others selected) */}
+          {formData.subLocation === "Others" && (
+            <div>
+              <label className="block text-sm font-medium text-[#1A1A2E]">
+                Specify Your Location <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                value={formData.customSubLocation}
+                onChange={(e) => setFormData({ ...formData, customSubLocation: e.target.value })}
+                placeholder="Enter your specific location"
+                className="mt-1 w-full rounded-lg border border-gray-300 px-4 py-2 text-[#1A1A2E] focus:border-[#0066FF] focus:outline-none focus:ring-2 focus:ring-[#0066FF]"
+                required
+              />
+            </div>
+          )}
 
           <div>
             <label className="block text-sm font-medium text-[#1A1A2E]">
@@ -291,7 +303,7 @@ export function OrdersTab() {
                   <div>
                     <h3 className="font-semibold text-[#1A1A2E]">{order.plan}</h3>
                     <p className="mt-1 text-sm text-[#6B7280]">
-                      {order.address}, {order.subLocation}, {order.region}
+                      {order.subLocation}, {order.region}
                     </p>
                     <p className="mt-1 text-sm text-[#6B7280]">
                       Preferred Date: {formatDate(order.preferredDate)}
@@ -299,15 +311,14 @@ export function OrdersTab() {
                   </div>
                   <div className="text-right">
                     <span
-                      className={`inline-block rounded-full px-3 py-1 text-xs font-semibold ${
-                        order.status === "pending"
+                      className={`inline-block rounded-full px-3 py-1 text-xs font-semibold ${order.status === "pending"
                           ? "bg-yellow-100 text-yellow-800"
                           : order.status === "confirmed"
-                          ? "bg-blue-100 text-blue-800"
-                          : order.status === "installed"
-                          ? "bg-green-100 text-green-800"
-                          : "bg-gray-100 text-gray-800"
-                      }`}
+                            ? "bg-blue-100 text-blue-800"
+                            : order.status === "installed"
+                              ? "bg-green-100 text-green-800"
+                              : "bg-gray-100 text-gray-800"
+                        }`}
                     >
                       {order.status.toUpperCase()}
                     </span>

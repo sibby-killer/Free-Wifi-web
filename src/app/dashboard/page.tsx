@@ -1,16 +1,30 @@
 "use client";
 
 import { useState } from "react";
-import { useUser } from "@clerk/nextjs";
+import { useUser, useClerk } from "@clerk/nextjs";
 import { redirect } from "next/navigation";
 import Image from "next/image";
+import Link from "next/link";
 import { ReviewsTab } from "@/components/ReviewsTab";
 import { ChatTab } from "@/components/ChatTab";
 import { OrdersTab } from "@/components/OrdersTab";
+import {
+  DashboardIcon,
+  StarIcon,
+  AIChatIcon,
+  OrderIcon,
+  DocumentIcon,
+  LockIcon,
+  LogoutIcon,
+  ToolIcon,
+  ChatIcon
+} from "@/components/ui/Icons";
 
 export default function DashboardPage() {
   const { isLoaded, isSignedIn, user } = useUser();
+  const { signOut } = useClerk();
   const [activeTab, setActiveTab] = useState<"dashboard" | "reviews" | "chat" | "orders">("dashboard");
+  const [showUserMenu, setShowUserMenu] = useState(false);
 
   if (!isLoaded) {
     return (
@@ -35,57 +49,96 @@ export default function DashboardPage() {
             <Image src="/logo.jpg" alt="FreeWiFi KE" width={40} height={40} className="rounded-lg object-cover" />
             <span className="text-2xl font-bold text-[#0066FF]">FreeWiFi KE</span>
           </div>
-          
+
           {/* Desktop Navigation */}
           <nav className="hidden items-center gap-6 lg:flex">
             <button
               onClick={() => setActiveTab("dashboard")}
-              className={`flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors ${
-                activeTab === "dashboard"
+              className={`flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors ${activeTab === "dashboard"
                   ? "bg-[#0066FF] text-white"
                   : "text-[#6B7280] hover:bg-gray-100"
-              }`}
+                }`}
             >
-              📊 Dashboard
+              <DashboardIcon size={18} /> Dashboard
             </button>
             <button
               onClick={() => setActiveTab("reviews")}
-              className={`flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors ${
-                activeTab === "reviews"
+              className={`flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors ${activeTab === "reviews"
                   ? "bg-[#0066FF] text-white"
                   : "text-[#6B7280] hover:bg-gray-100"
-              }`}
+                }`}
             >
-              ⭐ Reviews
+              <StarIcon size={18} filled /> Reviews
             </button>
             <button
               onClick={() => setActiveTab("chat")}
-              className={`flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors ${
-                activeTab === "chat"
+              className={`flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors ${activeTab === "chat"
                   ? "bg-[#0066FF] text-white"
                   : "text-[#6B7280] hover:bg-gray-100"
-              }`}
+                }`}
             >
-              🤖 AI Chat
+              <AIChatIcon size={18} /> AI Chat
             </button>
             <button
               onClick={() => setActiveTab("orders")}
-              className={`flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors ${
-                activeTab === "orders"
+              className={`flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors ${activeTab === "orders"
                   ? "bg-[#0066FF] text-white"
                   : "text-[#6B7280] hover:bg-gray-100"
-              }`}
+                }`}
             >
-              📦 Orders
+              <OrderIcon size={18} /> Orders
             </button>
           </nav>
-          
+
           <div className="flex items-center gap-4">
-            <button className="text-[#6B7280] hover:text-[#0066FF]">
-              ⚙️
-            </button>
-            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#0066FF] text-white font-semibold">
-              {firstName.charAt(0).toUpperCase()}
+            {/* Help, Privacy, Terms Links */}
+            <div className="hidden md:flex items-center gap-4 text-sm">
+              <Link href="/terms" target="_blank" className="text-[#6B7280] hover:text-[#0066FF]">
+                Terms
+              </Link>
+              <Link href="/privacy" target="_blank" className="text-[#6B7280] hover:text-[#0066FF]">
+                Privacy
+              </Link>
+            </div>
+
+            {/* User Menu */}
+            <div className="relative">
+              <button
+                onClick={() => setShowUserMenu(!showUserMenu)}
+                className="flex h-10 w-10 items-center justify-center rounded-full bg-[#0066FF] text-white font-semibold hover:bg-[#0052CC] transition-colors"
+              >
+                {firstName.charAt(0).toUpperCase()}
+              </button>
+
+              {/* Dropdown Menu */}
+              {showUserMenu && (
+                <div className="absolute right-0 mt-2 w-48 rounded-lg bg-white shadow-lg border border-gray-200 py-2 z-50">
+                  <div className="px-4 py-2 border-b border-gray-200">
+                    <p className="text-sm font-semibold text-[#1A1A2E]">{user?.fullName || firstName}</p>
+                    <p className="text-xs text-[#6B7280]">{user?.primaryEmailAddress?.emailAddress}</p>
+                  </div>
+                  <Link
+                    href="/terms"
+                    target="_blank"
+                    className="flex items-center gap-2 px-4 py-2 text-sm text-[#1A1A2E] hover:bg-gray-50"
+                  >
+                    <DocumentIcon size={16} /> Terms of Service
+                  </Link>
+                  <Link
+                    href="/privacy"
+                    target="_blank"
+                    className="flex items-center gap-2 px-4 py-2 text-sm text-[#1A1A2E] hover:bg-gray-50"
+                  >
+                    <LockIcon size={16} /> Privacy Policy
+                  </Link>
+                  <button
+                    onClick={() => signOut()}
+                    className="w-full flex items-center gap-2 text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50"
+                  >
+                    <LogoutIcon size={16} /> Logout
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -96,7 +149,7 @@ export default function DashboardPage() {
         {activeTab === "dashboard" && (
           <div>
             <h1 className="text-3xl font-bold text-[#1A1A2E]">
-              Hello, {firstName}! 👋
+              Hello, {firstName}!
             </h1>
             <p className="mt-2 text-[#6B7280]">Welcome to your dashboard</p>
 
@@ -127,18 +180,24 @@ export default function DashboardPage() {
                   onClick={() => setActiveTab("orders")}
                   className="flex flex-col items-center gap-2 rounded-xl bg-white p-6 shadow-md transition-all hover:scale-105 hover:shadow-lg"
                 >
-                  <span className="text-4xl">📦</span>
+                  <div className="flex h-14 w-14 items-center justify-center rounded-full bg-[#0066FF]/10">
+                    <OrderIcon size={32} />
+                  </div>
                   <span className="font-semibold text-[#1A1A2E]">Order New Plan</span>
                 </button>
                 <button className="flex flex-col items-center gap-2 rounded-xl bg-white p-6 shadow-md transition-all hover:scale-105 hover:shadow-lg">
-                  <span className="text-4xl">🔧</span>
+                  <div className="flex h-14 w-14 items-center justify-center rounded-full bg-[#FF6600]/10 text-[#FF6600]">
+                    <ToolIcon size={32} />
+                  </div>
                   <span className="font-semibold text-[#1A1A2E]">Report Problem</span>
                 </button>
                 <button
                   onClick={() => setActiveTab("chat")}
                   className="flex flex-col items-center gap-2 rounded-xl bg-white p-6 shadow-md transition-all hover:scale-105 hover:shadow-lg"
                 >
-                  <span className="text-4xl">💬</span>
+                  <div className="flex h-14 w-14 items-center justify-center rounded-full bg-[#00CC88]/10 text-[#00CC88]">
+                    <ChatIcon size={32} />
+                  </div>
                   <span className="font-semibold text-[#1A1A2E]">Contact Support</span>
                 </button>
               </div>
@@ -177,38 +236,34 @@ export default function DashboardPage() {
         <div className="mx-auto flex h-full max-w-7xl items-center justify-around px-4">
           <button
             onClick={() => setActiveTab("dashboard")}
-            className={`flex flex-col items-center gap-1 transition-colors ${
-              activeTab === "dashboard" ? "text-[#0066FF]" : "text-[#6B7280]"
-            }`}
+            className={`flex flex-col items-center gap-1 transition-colors ${activeTab === "dashboard" ? "text-[#0066FF]" : "text-[#6B7280]"
+              }`}
           >
-            <span className="text-2xl">📊</span>
+            <DashboardIcon size={24} />
             <span className="text-xs font-medium">Dashboard</span>
           </button>
           <button
             onClick={() => setActiveTab("reviews")}
-            className={`flex flex-col items-center gap-1 transition-colors ${
-              activeTab === "reviews" ? "text-[#0066FF]" : "text-[#6B7280]"
-            }`}
+            className={`flex flex-col items-center gap-1 transition-colors ${activeTab === "reviews" ? "text-[#0066FF]" : "text-[#6B7280]"
+              }`}
           >
-            <span className="text-2xl">⭐</span>
+            <StarIcon size={24} filled={activeTab === "reviews"} />
             <span className="text-xs font-medium">Reviews</span>
           </button>
           <button
             onClick={() => setActiveTab("chat")}
-            className={`flex flex-col items-center gap-1 transition-colors ${
-              activeTab === "chat" ? "text-[#0066FF]" : "text-[#6B7280]"
-            }`}
+            className={`flex flex-col items-center gap-1 transition-colors ${activeTab === "chat" ? "text-[#0066FF]" : "text-[#6B7280]"
+              }`}
           >
-            <span className="text-2xl">🤖</span>
+            <AIChatIcon size={24} />
             <span className="text-xs font-medium">AI Chat</span>
           </button>
           <button
             onClick={() => setActiveTab("orders")}
-            className={`flex flex-col items-center gap-1 transition-colors ${
-              activeTab === "orders" ? "text-[#0066FF]" : "text-[#6B7280]"
-            }`}
+            className={`flex flex-col items-center gap-1 transition-colors ${activeTab === "orders" ? "text-[#0066FF]" : "text-[#6B7280]"
+              }`}
           >
-            <span className="text-2xl">📦</span>
+            <OrderIcon size={24} />
             <span className="text-xs font-medium">Orders</span>
           </button>
         </div>

@@ -2,43 +2,53 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { prisma } from "@/lib/prisma";
 import Groq from "groq-sdk";
-import { env } from "@/lib/env";
 
-const groq = new Groq({ apiKey: env.server.GROQ_API_KEY });
+const SYSTEM_PROMPT = `You are the FreeWiFi KE virtual assistant. Your job is to ANSWER QUESTIONS about our internet service, not just greet users.
 
-const SYSTEM_PROMPT = `You are the FreeWiFi KE virtual assistant.
-
-ABOUT THE COMPANY:
+ABOUT FREEWIFI KE:
 - WiFi hotspot installation service in Kenya
-- Locations: Kakamega (Lurambi, Koro, Milimani) and Bungoma (Marel, Bridge, Kanduyi)
-- Plans: 10 Mbps at KES 1,500/month, 12 Mbps at KES 2,000/month
+- Locations: Kakamega (Lurambi, Koro, Milimani, Others) and Bungoma (Marel, Bridge, Kanduyi, Others)
+- Plans: 
+  * 10 Mbps Basic: KES 1,500/month (good for browsing & social media)
+  * 12 Mbps Premium: KES 2,000/month (best for streaming & gaming)
+- Router: KES 1,200 one-time fee (or FREE if you have your own router)
+- Installation: FREE within our coverage areas
 - Contact: WhatsApp 0762667048 or 0768294174, Email freewifiv4@gmail.com
-- Router: KES 1,200 (one-time) or FREE if you have your own
-- Installation: FREE within coverage areas
-- Support: 24/7 via WhatsApp, Email, AI Chat
+- Support: 24/7 via WhatsApp, Email, and AI Chat
 
-The Problem:
-In Western Kenya, internet is expensive and unreliable. Our competitors charge KES 2,500/month for just 8Mbps. Many families, students, and small businesses simply cannot afford it.
+WHY WE EXIST:
+In Western Kenya, internet is expensive and unreliable. Competitors charge KES 2,500/month for just 8Mbps. We partnered with Starlink to bring affordable satellite internet to Kakamega and Bungoma.
 
-We started FreeWiFi KE to change that. We partnered with Starlink to bring satellite internet to Kakamega and Bungoma at prices everyone can afford.
-
-YOU CAN HELP WITH:
-- Explaining plans and pricing
-- Installation process and timeline
-- Coverage area questions
-- Basic troubleshooting (restart router, check cables, speed issues)
-- Account and billing inquiries
-- Directing users to order or report problems
+ANSWER QUESTIONS ABOUT:
+1. Plans & Pricing - Explain the two plans, their speeds, and monthly costs
+2. Installation - FREE installation, typically takes 1-2 days after order confirmation
+3. Coverage Areas - We serve Kakamega and Bungoma regions (list specific sub-locations)
+4. Router Information - KES 1,200 or free if they have their own
+5. How to Order - Guide them through the ordering process on the dashboard
+6. Troubleshooting:
+   - Slow speeds? Try restarting router (unplug 30 seconds, plug back in)
+   - No internet? Check cables are properly connected
+   - Still having issues? Use @admin or report a problem via the dashboard
+7. Billing - Monthly payments, no hidden fees, cancel anytime
+8. Account Questions - Help with profile updates, order status, etc.
 
 YOU CANNOT HELP WITH:
-- Anything unrelated to FreeWiFi KE
-- Technical backend issues (tell them to @admin)
-- Refunds or billing disputes (tell them to @admin)
-- Personal advice unrelated to the service
+- Unrelated topics (politics, personal advice, other services)
+- Technical backend issues (tell them to use @admin)
+- Refunds or billing disputes (tell them to use @admin)
 
-TONE: Friendly, helpful, professional. Use simple English. Occasionally use emojis.
+IMPORTANT RULES:
+- DO NOT just say "Hello" or greet without answering the question
+- ALWAYS directly answer what the user is asking
+- If asked about plans, EXPLAIN the plans with prices and speeds
+- If asked about coverage, LIST the specific areas we serve
+- If unsure, admit it and suggest contacting @admin for human support
+- Be friendly but INFORMATIVE - provide actual details, not just greetings
+- Do NOT use emojis in your responses
 
-If user mentions @admin, acknowledge that a human will be contacted.`;
+TONE: Friendly, helpful, professional. Use simple English.
+
+If user mentions @admin, acknowledge that a human will be contacted soon.`;
 
 export async function POST(req: NextRequest) {
   try {
@@ -76,36 +86,58 @@ export async function POST(req: NextRequest) {
     }
 
     // Get chat history for context (last 10 messages)
-    const history = await prisma.chatMessage.findMany({
-      where: { userId },
-      orderBy: { createdAt: "desc" },
-      take: 10,
-    });
+    let history: { role: string; content: string }[] = [];
+    try {
+      const dbHistory = await prisma.chatMessage.findMany({
+        where: { userId },
+        orderBy: { createdAt: "desc" },
+        take: 10,
+      });
+      history = dbHistory.reverse().map((msg) => ({
+        role: msg.role,
+        content: msg.content,
+      }));
+    } catch (dbError) {
+      console.error("Database error fetching history:", dbError);
+      // Continue with empty history
+    }
 
     // Build messages array for Groq
     const messages = [
-      { role: "system", content: SYSTEM_PROMPT },
-      ...history.reverse().map((msg) => ({
-        role: msg.role as "user" | "assistant",
-        content: msg.content,
-      })),
+      { role: "system" as const, content: SYSTEM_PROMPT },
+      // Add history (excluding the very recent message if it was somehow fetched)
+      ...history
+        .filter(msg => msg.content !== message)
+        .map((msg) => ({
+          role: msg.role as "user" | "assistant",
+          content: msg.content,
+        })),
+      // Explicitly add current user message at the end
+      { role: "user" as const, content: message }
     ];
 
     // Call Groq API
-    let aiResponse = "I'm sorry, I couldn't process that.";
-    try {
-      const completion = await groq.chat.completions.create({
-        messages: messages as any,
-        model: "llama-3.1-8b-instant",
-        temperature: 0.7,
-        max_tokens: 500,
-      });
+    let aiResponse = "I'm sorry, I couldn't process that. Please try again or use @admin for human support.";
 
-      aiResponse = completion.choices[0]?.message?.content || "I'm sorry, I couldn't process that.";
-    } catch (groqError: any) {
-      console.error("Groq API error:", groqError);
-      // Fallback response if Groq fails
-      aiResponse = "I'm having trouble connecting to my AI service right now. Please try again in a moment, or use @admin to get human support.";
+    const groqApiKey = process.env.GROQ_API_KEY;
+    if (groqApiKey) {
+      try {
+        const groq = new Groq({ apiKey: groqApiKey });
+        const completion = await groq.chat.completions.create({
+          messages,
+          model: "llama-3.1-8b-instant",
+          temperature: 0.7,
+          max_tokens: 500,
+        });
+
+        aiResponse = completion.choices[0]?.message?.content || aiResponse;
+      } catch (groqError) {
+        console.error("Groq API error:", groqError);
+        aiResponse = "I'm having trouble connecting to my AI service right now. Please try again in a moment, or use @admin to get human support.";
+      }
+    } else {
+      console.error("GROQ_API_KEY not set");
+      aiResponse = "AI service is not configured. Please use @admin to get human support.";
     }
 
     // Save AI response
@@ -125,28 +157,36 @@ export async function POST(req: NextRequest) {
 
     // If @admin was mentioned, send notification email
     if (mentionAdmin) {
-      const { clerkClient } = await import("@clerk/nextjs/server");
-      const user = await (await clerkClient()).users.getUser(userId);
-      const userName = user.firstName || user.username || "Customer";
-      const userEmail = user.emailAddresses[0]?.emailAddress || "";
-      
-      const { sendEmail, generateAdminMentionNotification } = await import("@/lib/email");
-      await sendEmail({
-        to: env.server.ADMIN_EMAIL,
-        ...generateAdminMentionNotification(
-          userName,
-          user.username || "unknown",
-          userEmail,
-          "Location unknown", // TODO: Get from user profile
-          message,
-          new Date().toLocaleString()
-        ),
-      });
+      try {
+        const { clerkClient } = await import("@clerk/nextjs/server");
+        const user = await (await clerkClient()).users.getUser(userId);
+        const userName = user.firstName || user.username || "Customer";
+        const userEmail = user.emailAddresses[0]?.emailAddress || "";
+
+        const adminEmail = process.env.ADMIN_EMAIL;
+        if (adminEmail) {
+          const { sendEmail, generateAdminMentionNotification } = await import("@/lib/email");
+          await sendEmail({
+            to: adminEmail,
+            ...generateAdminMentionNotification(
+              userName,
+              user.username || "unknown",
+              userEmail,
+              "Location unknown",
+              message,
+              new Date().toLocaleString()
+            ),
+          });
+        }
+      } catch (emailError) {
+        console.error("Admin notification email failed:", emailError);
+        // Continue - chat still works
+      }
     }
 
-    return NextResponse.json({ 
+    return NextResponse.json({
       response: aiResponse,
-      mentionAdmin 
+      mentionAdmin
     });
   } catch (error) {
     console.error("Error in chat:", error);
@@ -157,18 +197,24 @@ export async function POST(req: NextRequest) {
   }
 }
 
-export async function GET(req: NextRequest) {
+export async function GET() {
   try {
     const { userId } = await auth();
     if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const messages = await prisma.chatMessage.findMany({
-      where: { userId },
-      orderBy: { createdAt: "asc" },
-      take: 100,
-    });
+    let messages: { id: string; role: string; content: string; createdAt: Date; mentionAdmin: boolean }[] = [];
+    try {
+      messages = await prisma.chatMessage.findMany({
+        where: { userId },
+        orderBy: { createdAt: "asc" },
+        take: 100,
+      });
+    } catch (dbError) {
+      console.error("Database error fetching messages:", dbError);
+      // Return empty array if database fails
+    }
 
     return NextResponse.json({ messages });
   } catch (error) {

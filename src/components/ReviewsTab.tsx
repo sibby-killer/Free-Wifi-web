@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { getRelativeTime } from "@/lib/utils";
+import { StarIcon } from "@/components/ui/Icons";
 
 interface Review {
   id: string;
@@ -86,13 +87,22 @@ export function ReviewsTab() {
   };
 
   const renderStars = (rating: number) => {
-    return "⭐".repeat(rating);
+    return Array.from({ length: 5 }, (_, i) => (
+      <StarIcon key={i} size={16} filled={i < rating} className="text-[#F59E0B]" />
+    ));
   };
 
   return (
     <div>
-      <h1 className="text-3xl font-bold text-[#1A1A2E]">Reviews ⭐</h1>
-      <p className="mt-2 text-[#6B7280]">See what others are saying</p>
+      <div className="flex items-center gap-3">
+        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#F59E0B]/10">
+          <StarIcon size={20} filled className="text-[#F59E0B]" />
+        </div>
+        <div>
+          <h1 className="text-3xl font-bold text-[#1A1A2E]">Reviews</h1>
+          <p className="text-[#6B7280]">See what others are saying</p>
+        </div>
+      </div>
 
       {/* Filter */}
       <div className="mt-6">
@@ -132,14 +142,14 @@ export function ReviewsTab() {
         ) : (
           reviews.map((review) => (
             <div key={review.id} className="rounded-xl bg-white p-6 shadow-md">
-              <div className="flex items-center gap-1 text-[#F59E0B]">
+              <div className="flex items-center gap-1">
                 {renderStars(review.rating)}
               </div>
               {review.content && (
                 <p className="mt-3 text-[#1A1A2E]">&quot;{review.content}&quot;</p>
               )}
               <p className="mt-2 text-sm text-[#6B7280]">
-                — {review.user.fullName || "Anonymous"} • {review.region} - {review.subLocation} •{" "}
+                — {review.user.fullName || "Anonymous"} - {review.region} - {review.subLocation} -{" "}
                 {getRelativeTime(review.createdAt)}
               </p>
             </div>
@@ -164,9 +174,9 @@ export function ReviewsTab() {
                       key={star}
                       type="button"
                       onClick={() => setFormData({ ...formData, rating: star })}
-                      className="text-3xl transition-transform hover:scale-110"
+                      className="transition-transform hover:scale-110"
                     >
-                      {star <= formData.rating ? "⭐" : "☆"}
+                      <StarIcon size={32} filled={star <= formData.rating} className="text-[#F59E0B]" />
                     </button>
                   ))}
                 </div>

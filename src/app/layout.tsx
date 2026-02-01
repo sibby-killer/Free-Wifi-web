@@ -25,7 +25,13 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <ClerkProvider>
+    <ClerkProvider
+      appearance={{
+        variables: {
+          colorPrimary: "#0066FF",
+        },
+      }}
+    >
       <html lang="en">
         <body className={`${fontSans.variable} ${fontMono.variable} antialiased`}>
           <SessionTimeout />

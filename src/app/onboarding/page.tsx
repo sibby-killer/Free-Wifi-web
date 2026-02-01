@@ -1,59 +1,117 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useUser } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
+import Image from "next/image";
+import { CheckIcon, WifiIcon } from "@/components/ui/Icons";
+
+const REGIONS = {
+  kakamega: {
+    name: "Kakamega",
+    subLocations: ["Lurambi", "Koro", "Milimani", "Others"]
+  },
+  bungoma: {
+    name: "Bungoma",
+    subLocations: ["Marel", "Bridge", "Kanduyi", "Others"]
+  }
+};
 
 export default function OnboardingPage() {
   const { user, isLoaded } = useUser();
   const router = useRouter();
-  const [submitting, setSubmitting] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [completed, setCompleted] = useState(false);
+
   const [formData, setFormData] = useState({
     fullName: "",
     phoneNumber: "",
     region: "",
     subLocation: "",
     customSubLocation: "",
-    agreedToTerms: false,
   });
+
+  // Load data from sign-up page if available
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const storedData = localStorage.getItem("onboarding_data");
+      if (storedData) {
+        try {
+          const parsed = JSON.parse(storedData);
+          setFormData((prev) => ({
+            ...prev,
+            fullName: parsed.fullName || prev.fullName,
+            phoneNumber: parsed.phoneNumber || prev.phoneNumber,
+            region: parsed.region || prev.region,
+            subLocation: parsed.subLocation || prev.subLocation,
+          }));
+          // Clear after reading
+          localStorage.removeItem("onboarding_data");
+        } catch {
+          // Ignore parse errors
+        }
+      }
+    }
+  }, []);
+
+  // Pre-fill from Clerk user data
+  useEffect(() => {
+    if (user) {
+      setFormData((prev) => ({
+        ...prev,
+        fullName: prev.fullName || user.fullName || `${user.firstName || ""} ${user.lastName || ""}`.trim(),
+        phoneNumber: prev.phoneNumber || user.phoneNumbers?.[0]?.phoneNumber || "",
+      }));
+    }
+  }, [user]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!user) return;
 
-    if (!formData.agreedToTerms) {
-      alert("You must agree to the Terms of Service and Privacy Policy");
-      return;
-    }
-
+    // Validate
     if (!formData.fullName || !formData.phoneNumber || !formData.region || !formData.subLocation) {
-      alert("Please fill in all required fields");
+      setError("Please fill in all fields");
       return;
     }
+
+    // Check Gmail policy
+    const email = user.primaryEmailAddress?.emailAddress || "";
+    if (!email.endsWith("@gmail.com")) {
+      setError("Only Gmail addresses are accepted. Please sign up with a Gmail account.");
+      return;
+    }
+
+    const finalSubLocation = formData.subLocation === "Others" ? formData.customSubLocation : formData.subLocation;
+    if (formData.subLocation === "Others" && !formData.customSubLocation.trim()) {
+      setError("Please specify your location");
+      return;
+    }
+
+    setLoading(true);
+    setError("");
 
     try {
-      setSubmitting(true);
-
       // Update Clerk user metadata
-      const finalSubLocation = formData.subLocation === "Others" ? formData.customSubLocation : formData.subLocation;
-      
-      await user?.update({
+      await user.update({
+        firstName: formData.fullName.split(" ")[0],
+        lastName: formData.fullName.split(" ").slice(1).join(" ") || undefined,
         unsafeMetadata: {
-          fullName: formData.fullName,
           phoneNumber: formData.phoneNumber,
           region: formData.region,
           subLocation: finalSubLocation,
-          onboardingCompleted: true,
+          onboardingComplete: true,
         },
       });
 
-      // Create user in Prisma database
+      // Create user in database
       const res = await fetch("/api/users", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           fullName: formData.fullName,
-          email: user?.primaryEmailAddress?.emailAddress,
+          email,
           phoneNumber: formData.phoneNumber,
           region: formData.region,
           subLocation: finalSubLocation,
@@ -61,104 +119,113 @@ export default function OnboardingPage() {
       });
 
       if (res.ok) {
-        router.push("/dashboard");
+        setCompleted(true);
+        setTimeout(() => {
+          router.push("/dashboard");
+        }, 2000);
       } else {
         const data = await res.json();
-        alert(data.error || "Failed to complete registration");
+        // If user already exists, just redirect to dashboard
+        if (data.error?.includes("already exists")) {
+          router.push("/dashboard");
+        } else {
+          setError(data.error || "Failed to save profile");
+        }
       }
-    } catch (error) {
-      console.error("Error during onboarding:", error);
-      alert("Failed to complete registration");
+    } catch (err) {
+      console.error("Onboarding error:", err);
+      setError("Failed to complete setup. Please try again.");
     } finally {
-      setSubmitting(false);
+      setLoading(false);
     }
   };
 
   const getSubLocations = () => {
-    if (formData.region === "kakamega") {
-      return ["Lurambi", "Koro", "Milimani", "Others"];
-    } else if (formData.region === "bungoma") {
-      return ["Marel", "Bridge", "Kanduyi", "Others"];
-    }
-    return [];
+    if (!formData.region) return [];
+    return REGIONS[formData.region as keyof typeof REGIONS]?.subLocations || [];
   };
 
   if (!isLoaded) {
     return (
-      <div className="flex min-h-screen items-center justify-center">
-        <div className="text-lg">Loading...</div>
+      <div className="min-h-screen bg-gradient-to-br from-[#F8F9FA] to-[#E8EAF0] flex items-center justify-center">
+        <div className="text-lg text-[#6B7280]">Loading...</div>
+      </div>
+    );
+  }
+
+  if (completed) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-[#F8F9FA] to-[#E8EAF0] flex items-center justify-center p-4">
+        <div className="text-center">
+          <div className="w-20 h-20 mx-auto rounded-full bg-green-100 flex items-center justify-center text-green-600">
+            <CheckIcon size={40} />
+          </div>
+          <h1 className="mt-6 text-3xl font-bold text-[#1A1A2E]">Welcome to FreeWiFi KE!</h1>
+          <p className="mt-2 text-[#6B7280]">Your account is ready. Redirecting to dashboard...</p>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-[#F5F7FA] py-12">
-      <div className="mx-auto max-w-2xl px-4 sm:px-6 lg:px-8">
-        <div className="rounded-2xl bg-white p-8 shadow-lg">
-          <h1 className="text-3xl font-bold text-[#1A1A2E]">Complete Your Profile</h1>
-          <p className="mt-2 text-[#6B7280]">
-            We need a few more details to get you connected
-          </p>
+    <div className="min-h-screen bg-gradient-to-br from-[#F8F9FA] to-[#E8EAF0] flex items-center justify-center p-4">
+      <div className="w-full max-w-md">
+        {/* Logo */}
+        <div className="text-center mb-8">
+          <div className="inline-flex items-center gap-2">
+            <Image src="/logo.jpg" alt="FreeWiFi KE" width={48} height={48} className="rounded-lg" />
+            <span className="text-3xl font-bold text-[#0066FF]">FreeWiFi KE</span>
+          </div>
+          <p className="mt-2 text-[#6B7280]">Complete your profile to get started</p>
+        </div>
 
-          <form onSubmit={handleSubmit} className="mt-8 space-y-6">
-            {/* Full Name */}
+        {/* Form Card */}
+        <div className="bg-white rounded-3xl shadow-xl p-8">
+          <div className="text-center mb-6">
+            <div className="w-16 h-16 mx-auto rounded-full bg-[#0066FF]/10 flex items-center justify-center text-[#0066FF]">
+              <WifiIcon size={32} />
+            </div>
+            <h1 className="mt-4 text-2xl font-bold text-[#1A1A2E]">Almost There!</h1>
+            <p className="text-sm text-[#6B7280]">Confirm your details to continue</p>
+          </div>
+
+          {error && (
+            <div className="mb-4 p-3 rounded-lg bg-red-50 border border-red-200 text-red-600 text-sm">
+              {error}
+            </div>
+          )}
+
+          <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-[#1A1A2E]">
-                Full Name <span className="text-red-500">*</span>
-              </label>
+              <label className="block text-sm font-medium text-[#1A1A2E] mb-1">Full Name</label>
               <input
                 type="text"
                 value={formData.fullName}
                 onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
-                placeholder="Enter your full name"
-                className="mt-1 w-full rounded-lg border border-gray-300 px-4 py-3 text-[#1A1A2E] focus:border-[#0066FF] focus:outline-none focus:ring-2 focus:ring-[#0066FF]"
+                placeholder="John Doe"
+                className="w-full px-4 py-3 rounded-lg border border-gray-300 text-[#1A1A2E] focus:border-[#0066FF] focus:outline-none focus:ring-2 focus:ring-[#0066FF]/20"
                 required
               />
             </div>
 
-            {/* Phone Number */}
             <div>
-              <label className="block text-sm font-medium text-[#1A1A2E]">
-                Phone Number <span className="text-red-500">*</span>
-              </label>
+              <label className="block text-sm font-medium text-[#1A1A2E] mb-1">Phone Number</label>
               <input
                 type="tel"
                 value={formData.phoneNumber}
                 onChange={(e) => setFormData({ ...formData, phoneNumber: e.target.value })}
-                placeholder="07XX XXX XXX or 01XX XXX XXX"
-                pattern="^(07|01)\d{8}$"
-                className="mt-1 w-full rounded-lg border border-gray-300 px-4 py-3 text-[#1A1A2E] focus:border-[#0066FF] focus:outline-none focus:ring-2 focus:ring-[#0066FF]"
+                placeholder="07XXXXXXXX"
+                className="w-full px-4 py-3 rounded-lg border border-gray-300 text-[#1A1A2E] focus:border-[#0066FF] focus:outline-none focus:ring-2 focus:ring-[#0066FF]/20"
                 required
               />
-              <p className="mt-1 text-sm text-[#6B7280]">
-                Format: 07XXXXXXXX or 01XXXXXXXX
-              </p>
             </div>
 
-            {/* Email (Read-only) */}
             <div>
-              <label className="block text-sm font-medium text-[#1A1A2E]">
-                Email Address
-              </label>
-              <input
-                type="email"
-                value={user?.primaryEmailAddress?.emailAddress || ""}
-                className="mt-1 w-full rounded-lg border border-gray-300 bg-gray-50 px-4 py-3 text-[#6B7280]"
-                disabled
-              />
-            </div>
-
-            {/* Region */}
-            <div>
-              <label className="block text-sm font-medium text-[#1A1A2E]">
-                Region <span className="text-red-500">*</span>
-              </label>
+              <label className="block text-sm font-medium text-[#1A1A2E] mb-1">Region</label>
               <select
                 value={formData.region}
-                onChange={(e) =>
-                  setFormData({ ...formData, region: e.target.value, subLocation: "", customSubLocation: "" })
-                }
-                className="mt-1 w-full rounded-lg border border-gray-300 px-4 py-3 text-[#1A1A2E] focus:border-[#0066FF] focus:outline-none focus:ring-2 focus:ring-[#0066FF]"
+                onChange={(e) => setFormData({ ...formData, region: e.target.value, subLocation: "" })}
+                className="w-full px-4 py-3 rounded-lg border border-gray-300 text-[#1A1A2E] focus:border-[#0066FF] focus:outline-none focus:ring-2 focus:ring-[#0066FF]/20"
                 required
               >
                 <option value="">Select your region</option>
@@ -167,88 +234,42 @@ export default function OnboardingPage() {
               </select>
             </div>
 
-            {/* Sub-location */}
             <div>
-              <label className="block text-sm font-medium text-[#1A1A2E]">
-                Sub-location <span className="text-red-500">*</span>
-              </label>
+              <label className="block text-sm font-medium text-[#1A1A2E] mb-1">Sub-location</label>
               <select
                 value={formData.subLocation}
                 onChange={(e) => setFormData({ ...formData, subLocation: e.target.value })}
-                className="mt-1 w-full rounded-lg border border-gray-300 px-4 py-3 text-[#1A1A2E] focus:border-[#0066FF] focus:outline-none focus:ring-2 focus:ring-[#0066FF]"
+                className="w-full px-4 py-3 rounded-lg border border-gray-300 text-[#1A1A2E] focus:border-[#0066FF] focus:outline-none focus:ring-2 focus:ring-[#0066FF]/20"
                 required
                 disabled={!formData.region}
               >
-                <option value="">Select your sub-location</option>
+                <option value="">Select sub-location</option>
                 {getSubLocations().map((loc) => (
-                  <option key={loc} value={loc}>
-                    {loc}
-                  </option>
+                  <option key={loc} value={loc}>{loc}</option>
                 ))}
               </select>
             </div>
 
-            {/* Custom Sub-location (if Others selected) */}
             {formData.subLocation === "Others" && (
               <div>
-                <label className="block text-sm font-medium text-[#1A1A2E]">
-                  Specify Your Location <span className="text-red-500">*</span>
-                </label>
+                <label className="block text-sm font-medium text-[#1A1A2E] mb-1">Specify Location</label>
                 <input
                   type="text"
                   value={formData.customSubLocation}
                   onChange={(e) => setFormData({ ...formData, customSubLocation: e.target.value })}
-                  placeholder="Enter your specific location"
-                  className="mt-1 w-full rounded-lg border border-gray-300 px-4 py-3 text-[#1A1A2E] focus:border-[#0066FF] focus:outline-none focus:ring-2 focus:ring-[#0066FF]"
+                  placeholder="Enter your specific area"
+                  className="w-full px-4 py-3 rounded-lg border border-gray-300 text-[#1A1A2E] focus:border-[#0066FF] focus:outline-none focus:ring-2 focus:ring-[#0066FF]/20"
                   required
                 />
               </div>
             )}
 
-            {/* Terms Checkbox */}
-            <div className="rounded-lg border-2 border-[#0066FF] bg-blue-50 p-4">
-              <label className="flex cursor-pointer items-start gap-3">
-                <input
-                  type="checkbox"
-                  checked={formData.agreedToTerms}
-                  onChange={(e) => setFormData({ ...formData, agreedToTerms: e.target.checked })}
-                  className="mt-1 h-5 w-5 flex-shrink-0 rounded border-gray-300 text-[#0066FF] focus:ring-[#0066FF]"
-                  required
-                />
-                <span className="text-sm text-[#1A1A2E]">
-                  I agree to the{" "}
-                  <Link
-                    href="/terms"
-                    target="_blank"
-                    className="font-medium text-[#0066FF] hover:underline"
-                  >
-                    Terms of Service
-                  </Link>{" "}
-                  and{" "}
-                  <Link
-                    href="/privacy"
-                    target="_blank"
-                    className="font-medium text-[#0066FF] hover:underline"
-                  >
-                    Privacy Policy
-                  </Link>
-                  . I understand that:
-                  <ul className="mt-2 list-inside list-disc space-y-1">
-                    <li>Router fee: KES 1,200 (or FREE if I have my own router)</li>
-                    <li>Monthly subscription is required for service</li>
-                    <li>Installation is FREE within coverage areas</li>
-                  </ul>
-                </span>
-              </label>
-            </div>
-
-            {/* Submit Button */}
             <button
               type="submit"
-              className="w-full rounded-full bg-[#0066FF] py-4 text-lg font-semibold text-white transition-colors hover:bg-[#0052CC] disabled:opacity-50"
-              disabled={submitting}
+              disabled={loading}
+              className="w-full py-3 rounded-full bg-[#0066FF] text-white font-semibold transition-all hover:bg-[#0052CC] hover:scale-[1.02] disabled:opacity-50"
             >
-              {submitting ? "Completing Registration..." : "Complete Registration"}
+              {loading ? "Saving..." : "Complete Setup"}
             </button>
           </form>
         </div>

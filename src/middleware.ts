@@ -1,46 +1,58 @@
-import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
+import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server';
+import { NextResponse } from 'next/server';
 
 const isPublicRoute = createRouteMatcher([
-  "/",
-  "/sign-in(.*)",
-  "/sign-up(.*)",
-  "/api/reviews(.*)",
+  '/',
+  '/sign-in(.*)',
+  '/sign-up(.*)',
+  '/terms',
+  '/privacy',
 ]);
 
-const isAdminRoute = createRouteMatcher([
-  "/admin(.*)",
-  "/api/admin(.*)",
-]);
+const isOnboardingRoute = createRouteMatcher(['/onboarding']);
 
 export default clerkMiddleware(async (auth, req) => {
-  if (isPublicRoute(req)) return;
-  
-  // Protect all non-public routes
-  await auth.protect();
-  
-  // Additional check for admin routes
-  if (isAdminRoute(req)) {
-    const { userId } = await auth();
-    if (!userId) {
-      return Response.redirect(new URL("/", req.url));
+  // Allow public routes
+  if (isPublicRoute(req)) {
+    return NextResponse.next();
+  }
+
+  // Protect all other routes
+  // Protect all other routes
+  const { userId } = await auth();
+  if (!userId) {
+    // Return 401 for API routes
+    if (req.nextUrl.pathname.startsWith('/api/')) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
-    
-    // Check if user has admin role
-    const { clerkClient } = await import("@clerk/nextjs/server");
+
+    // Redirect to sign-in for pages
+    const signInUrl = new URL('/sign-in', req.url);
+    signInUrl.searchParams.set('redirect_url', req.url);
+    return NextResponse.redirect(signInUrl);
+  }
+
+  // Check email domain on sign-up/onboarding
+  if (isOnboardingRoute(req)) {
+    const { clerkClient } = await import('@clerk/nextjs/server');
     const user = await (await clerkClient()).users.getUser(userId);
-    const role = user.publicMetadata?.role as string | undefined;
-    
-    if (role !== "admin") {
-      return Response.redirect(new URL("/dashboard", req.url));
+    const email = user.emailAddresses[0]?.emailAddress || '';
+
+    // Enforce Gmail only policy
+    if (!email.endsWith('@gmail.com')) {
+      // Delete the user and redirect to sign-up with error
+      await (await clerkClient()).users.deleteUser(userId);
+      const signUpUrl = new URL('/sign-up', req.url);
+      return NextResponse.redirect(signUpUrl);
     }
   }
+
+  return NextResponse.next();
 });
 
 export const config = {
   matcher: [
-    // Skip Next.js internals and all static files
-    "/((?!_next|.*\\.(?:css|js|json|jpg|jpeg|png|gif|svg|webp|ico|txt|map)$).*)",
-    // Always run for API routes
-    "/(api|trpc)(.*)",
+    '/((?!_next|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)',
+    '/(api|trpc)(.*)',
   ],
 };

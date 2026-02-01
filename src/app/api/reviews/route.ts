@@ -4,8 +4,8 @@ import { prisma } from "@/lib/prisma";
 
 export async function POST(req: NextRequest) {
   try {
-    const { userId } = await auth();
-    if (!userId) {
+    const { userId: clerkId } = await auth();
+    if (!clerkId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
@@ -20,9 +20,22 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // Get user database ID from Clerk ID
+    const user = await prisma.user.findUnique({
+      where: { clerkId },
+      select: { id: true }
+    });
+
+    if (!user) {
+      return NextResponse.json(
+        { error: "User not found. Please complete your profile first." },
+        { status: 404 }
+      );
+    }
+
     const review = await prisma.review.create({
       data: {
-        userId,
+        userId: user.id,
         rating,
         content: content || null,
         region,
@@ -46,8 +59,8 @@ export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
     const location = searchParams.get("location");
 
-    const where: any = { approved: true };
-    
+    const where: Record<string, unknown> = { approved: true };
+
     if (location && location !== "all") {
       const [region, subLocation] = location.split("-");
       if (region) where.region = region;

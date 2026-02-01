@@ -6,8 +6,25 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 export function generateWhatsAppLink(phoneNumber: string, message: string) {
-  // Convert 07... to 254...
-  const formattedPhone = phoneNumber.replace(/^0/, "254");
+  // Ensure phone number has country code +254 for Kenya
+  let formattedPhone = phoneNumber.trim();
+  
+  // Remove any spaces, dashes, or parentheses
+  formattedPhone = formattedPhone.replace(/[\s\-\(\)]/g, '');
+  
+  // Remove + if present
+  formattedPhone = formattedPhone.replace(/^\+/, '');
+  
+  // Convert 07... or 01... to 254...
+  if (formattedPhone.startsWith('0')) {
+    formattedPhone = '254' + formattedPhone.substring(1);
+  }
+  
+  // If it doesn't start with 254, add it
+  if (!formattedPhone.startsWith('254')) {
+    formattedPhone = '254' + formattedPhone;
+  }
+  
   const encodedMessage = encodeURIComponent(message);
   return `https://wa.me/${formattedPhone}?text=${encodedMessage}`;
 }

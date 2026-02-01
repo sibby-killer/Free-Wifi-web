@@ -5,6 +5,16 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import { SignInButton, SignUpButton, useAuth } from "@clerk/nextjs";
+import {
+  BoltIcon,
+  SparkleIcon,
+  ChatIcon,
+  MoneyIcon,
+  GlobeIcon,
+  LocationIcon,
+  CheckIcon,
+  GmailIcon
+} from "@/components/ui/Icons";
 
 export default function Home() {
   const router = useRouter();
@@ -45,9 +55,8 @@ export default function Home() {
           <div className="flex h-16 items-center justify-between">
             <button
               onClick={handleLogoClick}
-              className={`flex items-center gap-2 transition-transform ${
-                isShaking ? "animate-shake" : ""
-              }`}
+              className={`flex items-center gap-2 transition-transform ${isShaking ? "animate-shake" : ""
+                }`}
             >
               <Image src="/logo.jpg" alt="FreeWiFi KE" width={40} height={40} className="rounded-lg object-cover" />
               <span className="text-2xl font-bold text-[#0066FF]">FreeWiFi KE</span>
@@ -104,7 +113,7 @@ export default function Home() {
               </span>
             </h1>
             <p className="mx-auto mt-6 max-w-3xl text-xl leading-relaxed text-[#5A6C7D]">
-              Fast internet shouldn&apos;t cost a fortune. Get 12 Mbps for just KES 2,000/month — 
+              Fast internet shouldn&apos;t cost a fortune. Get 12 Mbps for just KES 2,000/month —
               powered by Starlink satellite technology.
             </p>
             <div className="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row">
@@ -121,21 +130,27 @@ export default function Home() {
                 View Plans
               </a>
             </div>
-            
+
             {/* Trust badges */}
             <div className="mt-16 grid grid-cols-1 gap-6 sm:grid-cols-3 lg:gap-8">
               <div className="rounded-3xl bg-white p-6 shadow-lg transition-all duration-300 hover:scale-105 hover:shadow-xl">
-                <div className="text-4xl">⚡</div>
+                <div className="flex h-12 w-12 mx-auto items-center justify-center rounded-full bg-[#6B8EA5]/10 text-[#6B8EA5]">
+                  <BoltIcon size={24} />
+                </div>
                 <div className="mt-3 text-lg font-semibold text-[#2D3748]">Starlink Powered</div>
                 <div className="mt-1 text-sm text-[#5A6C7D]">Reliable satellite technology</div>
               </div>
               <div className="rounded-3xl bg-white p-6 shadow-lg transition-all duration-300 hover:scale-105 hover:shadow-xl">
-                <div className="text-4xl">✨</div>
+                <div className="flex h-12 w-12 mx-auto items-center justify-center rounded-full bg-[#A8D5BA]/20 text-[#10B981]">
+                  <SparkleIcon size={24} />
+                </div>
                 <div className="mt-3 text-lg font-semibold text-[#2D3748]">Free Installation</div>
                 <div className="mt-1 text-sm text-[#5A6C7D]">No setup costs</div>
               </div>
               <div className="rounded-3xl bg-white p-6 shadow-lg transition-all duration-300 hover:scale-105 hover:shadow-xl">
-                <div className="text-4xl">💬</div>
+                <div className="flex h-12 w-12 mx-auto items-center justify-center rounded-full bg-[#0066FF]/10 text-[#0066FF]">
+                  <ChatIcon size={24} />
+                </div>
                 <div className="mt-3 text-lg font-semibold text-[#2D3748]">24/7 Support</div>
                 <div className="mt-1 text-sm text-[#5A6C7D]">AI-powered assistance</div>
               </div>
@@ -155,8 +170,8 @@ export default function Home() {
           </div>
           <div className="mt-16 grid gap-8 md:grid-cols-2 lg:grid-cols-3">
             <div className="rounded-3xl bg-gradient-to-br from-[#F8F9FA] to-white p-8 shadow-lg transition-all duration-300 hover:scale-105 hover:shadow-xl">
-              <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-[#6B8EA5] text-2xl text-white shadow-md">
-                💰
+              <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-[#6B8EA5] text-white shadow-md">
+                <MoneyIcon size={28} />
               </div>
               <h3 className="mt-6 text-xl font-semibold text-[#2D3748]">Affordable Pricing</h3>
               <p className="mt-3 leading-relaxed text-[#5A6C7D]">
@@ -164,8 +179,8 @@ export default function Home() {
               </p>
             </div>
             <div className="rounded-3xl bg-gradient-to-br from-[#F8F9FA] to-white p-8 shadow-lg transition-all duration-300 hover:scale-105 hover:shadow-xl">
-              <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-[#6B8EA5] text-2xl text-white shadow-md">
-                🌍
+              <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-[#6B8EA5] text-white shadow-md">
+                <GlobeIcon size={28} />
               </div>
               <h3 className="mt-6 text-xl font-semibold text-[#2D3748]">Satellite Technology</h3>
               <p className="mt-3 leading-relaxed text-[#5A6C7D]">
@@ -173,8 +188,8 @@ export default function Home() {
               </p>
             </div>
             <div className="rounded-3xl bg-gradient-to-br from-[#F8F9FA] to-white p-8 shadow-lg transition-all duration-300 hover:scale-105 hover:shadow-xl">
-              <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-[#6B8EA5] text-2xl text-white shadow-md">
-                📍
+              <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-[#6B8EA5] text-white shadow-md">
+                <LocationIcon size={28} />
               </div>
               <h3 className="mt-6 text-xl font-semibold text-[#2D3748]">Local Coverage</h3>
               <p className="mt-3 leading-relaxed text-[#5A6C7D]">
@@ -211,19 +226,19 @@ export default function Home() {
               </p>
               <ul className="mt-6 space-y-3">
                 <li className="flex items-center gap-3 text-[#5A6C7D]">
-                  <span className="text-[#A8D5BA]">✓</span>
+                  <CheckIcon size={18} className="text-[#A8D5BA]" />
                   <span>10 Mbps speed</span>
                 </li>
                 <li className="flex items-center gap-3 text-[#5A6C7D]">
-                  <span className="text-[#A8D5BA]">✓</span>
+                  <CheckIcon size={18} className="text-[#A8D5BA]" />
                   <span>Unlimited data</span>
                 </li>
                 <li className="flex items-center gap-3 text-[#5A6C7D]">
-                  <span className="text-[#A8D5BA]">✓</span>
+                  <CheckIcon size={18} className="text-[#A8D5BA]" />
                   <span>Free installation</span>
                 </li>
                 <li className="flex items-center gap-3 text-[#5A6C7D]">
-                  <span className="text-[#A8D5BA]">✓</span>
+                  <CheckIcon size={18} className="text-[#A8D5BA]" />
                   <span>24/7 support</span>
                 </li>
               </ul>
@@ -250,19 +265,19 @@ export default function Home() {
               </p>
               <ul className="mt-6 space-y-3">
                 <li className="flex items-center gap-3">
-                  <span className="text-[#A8D5BA]">✓</span>
+                  <CheckIcon size={18} className="text-[#A8D5BA]" />
                   <span>12 Mbps speed</span>
                 </li>
                 <li className="flex items-center gap-3">
-                  <span className="text-[#A8D5BA]">✓</span>
+                  <CheckIcon size={18} className="text-[#A8D5BA]" />
                   <span>Unlimited data</span>
                 </li>
                 <li className="flex items-center gap-3">
-                  <span className="text-[#A8D5BA]">✓</span>
+                  <CheckIcon size={18} className="text-[#A8D5BA]" />
                   <span>Free installation</span>
                 </li>
                 <li className="flex items-center gap-3">
-                  <span className="text-[#A8D5BA]">✓</span>
+                  <CheckIcon size={18} className="text-[#A8D5BA]" />
                   <span>Priority support</span>
                 </li>
               </ul>
@@ -287,21 +302,25 @@ export default function Home() {
           </div>
           <div className="mt-12 grid gap-8 md:grid-cols-2">
             <div className="rounded-3xl bg-gradient-to-br from-[#F8F9FA] to-white p-8 shadow-lg transition-all duration-300 hover:scale-105 hover:shadow-xl">
-              <h3 className="text-2xl font-bold text-[#6B8EA5]">📍 Kakamega</h3>
+              <h3 className="flex items-center gap-2 text-2xl font-bold text-[#6B8EA5]">
+                <LocationIcon size={24} /> Kakamega
+              </h3>
               <ul className="mt-4 space-y-2 text-[#5A6C7D]">
-                <li>• Lurambi</li>
-                <li>• Koro</li>
-                <li>• Milimani</li>
-                <li>• More areas available</li>
+                <li className="flex items-center gap-2"><CheckIcon size={16} className="text-[#A8D5BA]" /> Lurambi</li>
+                <li className="flex items-center gap-2"><CheckIcon size={16} className="text-[#A8D5BA]" /> Koro</li>
+                <li className="flex items-center gap-2"><CheckIcon size={16} className="text-[#A8D5BA]" /> Milimani</li>
+                <li className="flex items-center gap-2"><CheckIcon size={16} className="text-[#A8D5BA]" /> More areas available</li>
               </ul>
             </div>
             <div className="rounded-3xl bg-gradient-to-br from-[#F8F9FA] to-white p-8 shadow-lg transition-all duration-300 hover:scale-105 hover:shadow-xl">
-              <h3 className="text-2xl font-bold text-[#6B8EA5]">📍 Bungoma</h3>
+              <h3 className="flex items-center gap-2 text-2xl font-bold text-[#6B8EA5]">
+                <LocationIcon size={24} /> Bungoma
+              </h3>
               <ul className="mt-4 space-y-2 text-[#5A6C7D]">
-                <li>• Marel</li>
-                <li>• Bridge</li>
-                <li>• Kanduyi</li>
-                <li>• More areas available</li>
+                <li className="flex items-center gap-2"><CheckIcon size={16} className="text-[#A8D5BA]" /> Marel</li>
+                <li className="flex items-center gap-2"><CheckIcon size={16} className="text-[#A8D5BA]" /> Bridge</li>
+                <li className="flex items-center gap-2"><CheckIcon size={16} className="text-[#A8D5BA]" /> Kanduyi</li>
+                <li className="flex items-center gap-2"><CheckIcon size={16} className="text-[#A8D5BA]" /> More areas available</li>
               </ul>
             </div>
           </div>
@@ -322,7 +341,7 @@ export default function Home() {
               href="mailto:freewifiv4@gmail.com"
               className="flex w-full max-w-md items-center justify-center gap-3 rounded-full bg-[#6B8EA5] py-4 text-lg font-semibold text-white shadow-lg transition-all duration-300 hover:scale-105 hover:bg-[#5A7D94] hover:shadow-xl"
             >
-              <span className="text-2xl">✉️</span>
+              <GmailIcon size={24} />
               freewifiv4@gmail.com
             </a>
             <p className="mt-4 text-sm text-[#5A6C7D]">
@@ -344,14 +363,14 @@ export default function Home() {
           </p>
           <div className="mt-6 flex flex-wrap items-center justify-center gap-6 text-sm text-[#A0AEC0]">
             <span>Kakamega & Bungoma</span>
-            <span>•</span>
+            <span>-</span>
             <span>freewifiv4@gmail.com</span>
           </div>
           <div className="mt-8 flex items-center justify-center gap-6">
             <Link href="/terms" className="text-sm text-[#A0AEC0] hover:text-white transition-colors duration-200">
               Terms of Service
             </Link>
-            <span className="text-[#A0AEC0]">•</span>
+            <span className="text-[#A0AEC0]">-</span>
             <Link href="/privacy" className="text-sm text-[#A0AEC0] hover:text-white transition-colors duration-200">
               Privacy Policy
             </Link>
