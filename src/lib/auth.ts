@@ -15,6 +15,12 @@ export async function requireAdmin() {
     | string
     | undefined;
 
-  if (role !== "admin") throw new Error("FORBIDDEN");
+  const email = user.emailAddresses[0]?.emailAddress;
+  const adminEmail = process.env.ADMIN_EMAIL;
+
+  // Allow if role is admin OR if email matches the ADMIN_EMAIL env var
+  if (role !== "admin" && (!adminEmail || email !== adminEmail)) {
+    throw new Error("FORBIDDEN");
+  }
   return { auth: a, user, role };
 }
