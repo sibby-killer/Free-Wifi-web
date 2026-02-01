@@ -8,6 +8,7 @@ import Link from "next/link";
 import { ReviewsTab } from "@/components/ReviewsTab";
 import { ChatTab } from "@/components/ChatTab";
 import { OrdersTab } from "@/components/OrdersTab";
+import { NotificationsTab } from "@/components/NotificationsTab";
 import {
   DashboardIcon,
   StarIcon,
@@ -17,13 +18,14 @@ import {
   LockIcon,
   LogoutIcon,
   ToolIcon,
-  ChatIcon
+  ChatIcon,
+  BellIcon
 } from "@/components/ui/Icons";
 
 export default function DashboardPage() {
   const { isLoaded, isSignedIn, user } = useUser();
   const { signOut } = useClerk();
-  const [activeTab, setActiveTab] = useState<"dashboard" | "reviews" | "chat" | "orders">("dashboard");
+  const [activeTab, setActiveTab] = useState<"dashboard" | "reviews" | "chat" | "orders" | "notifications">("dashboard");
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
 
@@ -118,6 +120,15 @@ export default function DashboardPage() {
                 }`}
             >
               <OrderIcon size={18} /> Orders
+            </button>
+            <button
+              onClick={() => setActiveTab("notifications")}
+              className={`flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors ${activeTab === "notifications"
+                ? "bg-[#0066FF] text-white"
+                : "text-[#6B7280] hover:bg-gray-100"
+                }`}
+            >
+              <BellIcon size={18} /> Notifications
             </button>
           </nav>
 
@@ -260,6 +271,8 @@ export default function DashboardPage() {
         {activeTab === "chat" && <ChatTab />}
 
         {activeTab === "orders" && <OrdersTab />}
+
+        {activeTab === "notifications" && <NotificationsTab />}
       </div>
 
       {/* TikTok-style Bottom Navigation (Mobile Only) */}
@@ -305,6 +318,14 @@ export default function DashboardPage() {
           >
             <OrderIcon size={24} />
             <span className="text-xs font-medium">Orders</span>
+          </button>
+          <button
+            onClick={() => setActiveTab("notifications")}
+            className={`flex flex-col items-center gap-1 transition-colors ${activeTab === "notifications" ? "text-[#0066FF]" : "text-[#6B7280]"
+              }`}
+          >
+            <BellIcon size={24} />
+            <span className="text-xs font-medium">Alerts</span>
           </button>
         </div>
       </nav>

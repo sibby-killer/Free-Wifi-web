@@ -14,6 +14,32 @@ export default function AdminHomePage() {
     openTickets: 0,
     totalUsers: 0,
   });
+  const [notification, setNotification] = useState({
+    title: "",
+    message: "",
+    type: "info",
+    isGlobal: true,
+  });
+
+  const handleNotificationSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      const res = await fetch("/api/notifications", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(notification),
+      });
+      if (res.ok) {
+        alert("Notification Sent!");
+        setNotification({ title: "", message: "", type: "info", isGlobal: true });
+      } else {
+        alert("Failed to send");
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Error sending");
+    }
+  };
 
   useEffect(() => {
     if (isLoaded && user) {
@@ -138,6 +164,65 @@ export default function AdminHomePage() {
           </div>
         </div>
 
+        {/* Broadcast Notification */}
+        <div className="mt-8 rounded-2xl bg-white p-6 shadow-md">
+          <h2 className="text-xl font-semibold text-[#1A1A2E]">Broadcast Notification</h2>
+          <form onSubmit={handleNotificationSubmit} className="mt-4 space-y-4">
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Title</label>
+                <input
+                  type="text"
+                  required
+                  className="mt-1 w-full rounded-lg border border-gray-300 p-2"
+                  value={notification.title}
+                  onChange={(e) => setNotification({ ...notification, title: e.target.value })}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Type</label>
+                <select
+                  className="mt-1 w-full rounded-lg border border-gray-300 p-2"
+                  value={notification.type}
+                  onChange={(e) => setNotification({ ...notification, type: e.target.value })}
+                >
+                  <option value="info">Info (Blue)</option>
+                  <option value="success">Success (Green)</option>
+                  <option value="warning">Warning (Yellow)</option>
+                  <option value="alert">Alert (Red)</option>
+                </select>
+              </div>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700">Message</label>
+              <textarea
+                required
+                rows={3}
+                className="mt-1 w-full rounded-lg border border-gray-300 p-2"
+                value={notification.message}
+                onChange={(e) => setNotification({ ...notification, message: e.target.value })}
+              />
+            </div>
+            <div className="flex items-center justify-between">
+              <label className="flex items-center gap-2 text-sm text-gray-700">
+                <input
+                  type="checkbox"
+                  checked={notification.isGlobal}
+                  onChange={(e) => setNotification({ ...notification, isGlobal: e.target.checked })}
+                  className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                />
+                Send to All Users (Global)
+              </label>
+              <button
+                type="submit"
+                className="rounded-lg bg-blue-600 px-6 py-2 text-white hover:bg-blue-700 transition-colors"
+              >
+                Send Notification
+              </button>
+            </div>
+          </form>
+        </div>
+
         {/* Recent Activity */}
         <div className="mt-8 rounded-2xl bg-white p-6 shadow-md">
           <h2 className="text-xl font-semibold text-[#1A1A2E]">Recent Activity</h2>
@@ -146,6 +231,6 @@ export default function AdminHomePage() {
           </div>
         </div>
       </div>
-    </div>
+    </div >
   );
 }

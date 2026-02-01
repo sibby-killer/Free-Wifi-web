@@ -91,3 +91,14 @@ model ChatMessage {
   mentionAdmin Boolean  @default(false)
   createdAt    DateTime @default(now())
 }
+
+// Notification model
+model Notification {
+  id        String   @id @default(cuid())
+  title     String
+  message   String
+  type      String   @default("info") // info, success, warning, alert
+  userId    String?  // Optional: if null, it's a global notification
+  isGlobal  Boolean  @default(false)
+  createdAt DateTime @default(now())
+}
