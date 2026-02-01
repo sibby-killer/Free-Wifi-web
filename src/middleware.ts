@@ -28,7 +28,7 @@ export default clerkMiddleware(async (auth, req) => {
     // Check if user has admin role
     const { clerkClient } = await import("@clerk/nextjs/server");
     const user = await (await clerkClient()).users.getUser(userId);
-    const role = (user.publicMetadata?.role ?? user.privateMetadata?.role) as string | undefined;
+    const role = user.publicMetadata?.role as string | undefined;
     
     if (role !== "admin") {
       return Response.redirect(new URL("/dashboard", req.url));

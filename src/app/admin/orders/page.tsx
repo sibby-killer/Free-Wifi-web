@@ -13,7 +13,7 @@ export default function AdminOrdersPage() {
 
   useEffect(() => {
     if (isLoaded && user) {
-      const role = (user.publicMetadata?.role ?? user.privateMetadata?.role) as string | undefined;
+      const role = user.publicMetadata?.role as string | undefined;
       if (role !== "admin") {
         router.push("/dashboard");
       }
@@ -28,7 +28,7 @@ export default function AdminOrdersPage() {
     );
   }
 
-  const role = (user?.publicMetadata?.role ?? user?.privateMetadata?.role) as string | undefined;
+  const role = user?.publicMetadata?.role as string | undefined;
   if (role !== "admin") {
     return null;
   }
