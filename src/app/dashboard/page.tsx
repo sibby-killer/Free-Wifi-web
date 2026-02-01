@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useUser, useClerk } from "@clerk/nextjs";
 import { redirect } from "next/navigation";
 import Image from "next/image";
@@ -25,6 +25,20 @@ export default function DashboardPage() {
   const { signOut } = useClerk();
   const [activeTab, setActiveTab] = useState<"dashboard" | "reviews" | "chat" | "orders">("dashboard");
   const [showUserMenu, setShowUserMenu] = useState(false);
+
+  // Auto-sync user to database (Self-Healing)
+  useEffect(() => {
+    if (isSignedIn && user) {
+      const syncUser = async () => {
+        try {
+          await fetch("/api/users/sync", { method: "POST" });
+        } catch (err) {
+          console.error("User sync failed:", err);
+        }
+      };
+      syncUser();
+    }
+  }, [isSignedIn, user]);
 
   if (!isLoaded) {
     return (
@@ -55,8 +69,8 @@ export default function DashboardPage() {
             <button
               onClick={() => setActiveTab("dashboard")}
               className={`flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors ${activeTab === "dashboard"
-                  ? "bg-[#0066FF] text-white"
-                  : "text-[#6B7280] hover:bg-gray-100"
+                ? "bg-[#0066FF] text-white"
+                : "text-[#6B7280] hover:bg-gray-100"
                 }`}
             >
               <DashboardIcon size={18} /> Dashboard
@@ -64,8 +78,8 @@ export default function DashboardPage() {
             <button
               onClick={() => setActiveTab("reviews")}
               className={`flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors ${activeTab === "reviews"
-                  ? "bg-[#0066FF] text-white"
-                  : "text-[#6B7280] hover:bg-gray-100"
+                ? "bg-[#0066FF] text-white"
+                : "text-[#6B7280] hover:bg-gray-100"
                 }`}
             >
               <StarIcon size={18} filled /> Reviews
@@ -73,8 +87,8 @@ export default function DashboardPage() {
             <button
               onClick={() => setActiveTab("chat")}
               className={`flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors ${activeTab === "chat"
-                  ? "bg-[#0066FF] text-white"
-                  : "text-[#6B7280] hover:bg-gray-100"
+                ? "bg-[#0066FF] text-white"
+                : "text-[#6B7280] hover:bg-gray-100"
                 }`}
             >
               <AIChatIcon size={18} /> AI Chat
@@ -82,8 +96,8 @@ export default function DashboardPage() {
             <button
               onClick={() => setActiveTab("orders")}
               className={`flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors ${activeTab === "orders"
-                  ? "bg-[#0066FF] text-white"
-                  : "text-[#6B7280] hover:bg-gray-100"
+                ? "bg-[#0066FF] text-white"
+                : "text-[#6B7280] hover:bg-gray-100"
                 }`}
             >
               <OrderIcon size={18} /> Orders

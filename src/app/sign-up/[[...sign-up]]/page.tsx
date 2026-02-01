@@ -27,6 +27,8 @@ export default function SignUpPage() {
   const [loading, setLoading] = useState(false);
   const [verifying, setVerifying] = useState(false);
   const [verificationCode, setVerificationCode] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const [formData, setFormData] = useState({
     fullName: "",
@@ -145,9 +147,25 @@ export default function SignUpPage() {
       } else {
         setError("Verification failed. Please try again.");
       }
-    } catch (err: unknown) {
-      const clerkError = err as { errors?: { message: string }[] };
-      setError(clerkError.errors?.[0]?.message || "Invalid verification code");
+    } catch (err: any) {
+      console.error("Verification error:", err);
+      // Handle "already verified" case
+      if (err.errors?.[0]?.code === "verification_already_verified" ||
+        err.errors?.[0]?.message?.toLowerCase().includes("already verified")) {
+
+        // If already verified, try to proceed
+        try {
+          // We might be able to just redirect to onboarding if the session is active.
+          // Or just alert and redirect.
+          router.push("/onboarding");
+          return;
+        } catch (e) {
+          setError("Email already verified. Please sign in.");
+        }
+      } else {
+        const clerkError = err as { errors?: { message: string }[] };
+        setError(clerkError.errors?.[0]?.message || "Invalid verification code");
+      }
     } finally {
       setLoading(false);
     }
@@ -203,13 +221,35 @@ export default function SignUpPage() {
                 />
               </div>
 
-              <button
-                type="submit"
-                disabled={loading}
-                className="w-full py-3 rounded-full bg-[#0066FF] text-white font-semibold transition-all hover:bg-[#0052CC] disabled:opacity-50"
-              >
-                {loading ? "Verifying..." : "Verify Email"}
-              </button>
+              <div className="flex flex-col gap-3">
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full py-3 rounded-full bg-[#0066FF] text-white font-semibold transition-all hover:bg-[#0052CC] disabled:opacity-50"
+                >
+                  {loading ? "Verifying..." : "Verify Email"}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={async () => {
+                    try {
+                      setLoading(true);
+                      await signUp.prepareEmailAddressVerification({ strategy: "email_code" });
+                      alert("Code resent successfully!");
+                    } catch (err) {
+                      console.error("Resend error:", err);
+                      alert("Failed to resend code. Please try again.");
+                    } finally {
+                      setLoading(false);
+                    }
+                  }}
+                  disabled={loading}
+                  className="w-full py-3 rounded-full border border-gray-300 text-[#1A1A2E] font-semibold hover:bg-gray-50 disabled:opacity-50"
+                >
+                  Resend Code
+                </button>
+              </div>
             </form>
           </div>
         </div>
@@ -235,8 +275,8 @@ export default function SignUpPage() {
             <div key={s} className="flex items-center">
               <div
                 className={`w-8 h-8 rounded-full flex items-center justify-center font-semibold text-sm transition-colors ${step >= s
-                    ? "bg-[#0066FF] text-white"
-                    : "bg-gray-200 text-[#6B7280]"
+                  ? "bg-[#0066FF] text-white"
+                  : "bg-gray-200 text-[#6B7280]"
                   }`}
               >
                 {step > s ? <CheckIcon size={16} /> : s}
@@ -404,15 +444,28 @@ export default function SignUpPage() {
 
               <div>
                 <label className="block text-sm font-medium text-[#1A1A2E] mb-1">Password</label>
-                <input
-                  type="password"
-                  value={formData.password}
-                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                  placeholder="At least 8 characters"
-                  className="w-full px-4 py-3 rounded-lg border border-gray-300 text-[#1A1A2E] focus:border-[#0066FF] focus:outline-none focus:ring-2 focus:ring-[#0066FF]/20"
-                  required
-                  minLength={8}
-                />
+                <div className="relative">
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    value={formData.password}
+                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                    placeholder="At least 8 characters"
+                    className="w-full px-4 py-3 rounded-lg border border-gray-300 text-[#1A1A2E] focus:border-[#0066FF] focus:outline-none focus:ring-2 focus:ring-[#0066FF]/20 pr-10"
+                    required
+                    minLength={8}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  >
+                    {showPassword ? (
+                      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" /><line x1="1" y1="1" x2="23" y2="23" /></svg>
+                    ) : (
+                      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" /><circle cx="12" cy="12" r="3" /></svg>
+                    )}
+                  </button>
+                </div>
 
                 {/* Password Strength Bar */}
                 {formData.password && (
@@ -435,14 +488,27 @@ export default function SignUpPage() {
 
               <div>
                 <label className="block text-sm font-medium text-[#1A1A2E] mb-1">Confirm Password</label>
-                <input
-                  type="password"
-                  value={formData.confirmPassword}
-                  onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
-                  placeholder="Re-enter password"
-                  className="w-full px-4 py-3 rounded-lg border border-gray-300 text-[#1A1A2E] focus:border-[#0066FF] focus:outline-none focus:ring-2 focus:ring-[#0066FF]/20"
-                  required
-                />
+                <div className="relative">
+                  <input
+                    type={showConfirmPassword ? "text" : "password"}
+                    value={formData.confirmPassword}
+                    onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
+                    placeholder="Re-enter password"
+                    className="w-full px-4 py-3 rounded-lg border border-gray-300 text-[#1A1A2E] focus:border-[#0066FF] focus:outline-none focus:ring-2 focus:ring-[#0066FF]/20 pr-10"
+                    required
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  >
+                    {showConfirmPassword ? (
+                      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" /><line x1="1" y1="1" x2="23" y2="23" /></svg>
+                    ) : (
+                      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" /><circle cx="12" cy="12" r="3" /></svg>
+                    )}
+                  </button>
+                </div>
                 {formData.confirmPassword && formData.password !== formData.confirmPassword && (
                   <p className="mt-1 text-xs text-red-500">Passwords do not match</p>
                 )}
