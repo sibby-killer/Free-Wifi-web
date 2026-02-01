@@ -84,7 +84,19 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
-    return NextResponse.json({ user });
+    const adminEmails = [
+      process.env.ADMIN_EMAIL,
+      process.env.ADMIN_EMAIL_1,
+      process.env.ADMIN_EMAIL_2
+    ]
+      .filter(Boolean)
+      .join(",")
+      .split(",")
+      .map(e => e.trim());
+
+    const isAdmin = user && adminEmails.includes(user.email);
+
+    return NextResponse.json({ user, isAdmin });
   } catch (error) {
     console.error("Error fetching user:", error);
     return NextResponse.json(

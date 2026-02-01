@@ -25,18 +25,27 @@ export default function DashboardPage() {
   const { signOut } = useClerk();
   const [activeTab, setActiveTab] = useState<"dashboard" | "reviews" | "chat" | "orders">("dashboard");
   const [showUserMenu, setShowUserMenu] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
 
-  // Auto-sync user to database (Self-Healing)
+  // Auto-sync user and check admin status
   useEffect(() => {
     if (isSignedIn && user) {
-      const syncUser = async () => {
+      const initDashboard = async () => {
         try {
+          // 1. Sync User (Self-Healing)
           await fetch("/api/users/sync", { method: "POST" });
+
+          // 2. Check Admin Status
+          const res = await fetch("/api/users");
+          if (res.ok) {
+            const data = await res.json();
+            if (data.isAdmin) setIsAdmin(true);
+          }
         } catch (err) {
-          console.error("User sync failed:", err);
+          console.error("Dashboard init failed:", err);
         }
       };
-      syncUser();
+      initDashboard();
     }
   }, [isSignedIn, user]);
 
@@ -75,6 +84,14 @@ export default function DashboardPage() {
             >
               <DashboardIcon size={18} /> Dashboard
             </button>
+            {isAdmin && (
+              <Link
+                href="/admin"
+                className="flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium text-[#6B7280] hover:bg-gray-100 hover:text-[#0066FF]"
+              >
+                <LockIcon size={18} /> Admin Panel
+              </Link>
+            )}
             <button
               onClick={() => setActiveTab("reviews")}
               className={`flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors ${activeTab === "reviews"
@@ -256,6 +273,15 @@ export default function DashboardPage() {
             <DashboardIcon size={24} />
             <span className="text-xs font-medium">Dashboard</span>
           </button>
+          {isAdmin && (
+            <Link
+              href="/admin"
+              className="flex flex-col items-center gap-1 transition-colors text-[#6B7280]"
+            >
+              <LockIcon size={24} />
+              <span className="text-xs font-medium">Admin</span>
+            </Link>
+          )}
           <button
             onClick={() => setActiveTab("reviews")}
             className={`flex flex-col items-center gap-1 transition-colors ${activeTab === "reviews" ? "text-[#0066FF]" : "text-[#6B7280]"

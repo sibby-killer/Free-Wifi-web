@@ -16,10 +16,20 @@ export async function requireAdmin() {
     | undefined;
 
   const email = user.emailAddresses[0]?.emailAddress;
-  const adminEmail = process.env.ADMIN_EMAIL;
 
-  // Allow if role is admin OR if email matches the ADMIN_EMAIL env var
-  if (role !== "admin" && (!adminEmail || email !== adminEmail)) {
+  // flexible support for ADMIN_EMAIL (csv) or explicit ADMIN_EMAIL_1/2
+  const adminEmails = [
+    process.env.ADMIN_EMAIL,
+    process.env.ADMIN_EMAIL_1,
+    process.env.ADMIN_EMAIL_2
+  ]
+    .filter(Boolean)
+    .join(",")
+    .split(",")
+    .map(e => e.trim());
+
+  // Allow if role is admin OR if email is in the admin list
+  if (role !== "admin" && (!email || !adminEmails.includes(email))) {
     throw new Error("FORBIDDEN");
   }
   return { auth: a, user, role };
