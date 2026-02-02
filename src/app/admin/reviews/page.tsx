@@ -74,7 +74,7 @@ export default function AdminReviewsPage() {
                                         {new Date(review.createdAt).toLocaleDateString()}
                                     </span>
                                 </div>
-                                <p className="text-gray-800 italic">"{review.content}"</p>
+                                <p className="text-gray-800 italic">&quot;{review.content}&quot;</p>
                                 <div className="mt-2 text-sm text-gray-500">
                                     By: <span className="font-medium text-gray-900">{review.user?.fullName}</span>
                                 </div>
@@ -83,8 +83,8 @@ export default function AdminReviewsPage() {
                             <button
                                 onClick={() => toggleApproval(review.id, review.approved)}
                                 className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${review.approved
-                                        ? "bg-red-50 text-red-600 hover:bg-red-100"
-                                        : "bg-green-600 text-white hover:bg-green-700"
+                                    ? "bg-red-50 text-red-600 hover:bg-red-100"
+                                    : "bg-green-600 text-white hover:bg-green-700"
                                     }`}
                             >
                                 {review.approved ? "Unapprove" : "Approve"}
