@@ -48,12 +48,7 @@ export async function GET(req: NextRequest) {
             take: 5,
             orderBy: { createdAt: "desc" },
             include: {
-                // We need user name. But ChatMessage relation is `userId` -> `User`.
-                // Wait, in schema `user User @relation...`? Yes.
-                // But previous files had trouble with it? Let's check schema again if needed.
-                // Checked schema in step 1405: `user User @relation...`. It should work.
-                // Note: `include` might fail if client gen failed. But assuming it works in prod.
-                // We'll try to include it.
+                user: { select: { fullName: true } }
             }
         });
 
