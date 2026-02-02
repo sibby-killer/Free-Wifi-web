@@ -11,11 +11,9 @@ export async function GET(req: NextRequest) {
             select: {
                 id: true,
                 fullName: true,
-                username: true,
-                email: true, // Clerk email usually, but here we might have synced it?
+                email: true,
                 phoneNumber: true,
                 currentPlan: true,
-                isAdmin: true,
                 createdAt: true
             },
             orderBy: { createdAt: "desc" },
