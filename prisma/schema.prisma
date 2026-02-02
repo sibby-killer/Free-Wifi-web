@@ -18,8 +18,15 @@ model User {
   phoneNumber    String
   region         String   // Kakamega or Bungoma
   subLocation    String
+  customLocation String?   // NEW: For user edited location
+  address        String?   // NEW
+  mapsLink       String?   // NEW
   currentPlan    String?
   renewalDate    DateTime?
+  altPhone       String?   // NEW
+  whatsappNumber String?   // NEW
+  profileImage   String?   // NEW
+  profileComplete Boolean  @default(false) // NEW
   theme          String   @default("light") // light, dark, ocean, forest
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
@@ -176,4 +183,15 @@ model Notification {
   userId    String?
   isGlobal  Boolean  @default(false)
   createdAt DateTime @default(now())
+}
+
+// Message Templates for WhatsApp (NEW)
+model MessageTemplate {
+  id        String   @id @default(cuid())
+  name      String
+  content   String   @db.Text
+  category  String   // inquiry, installation, support, payment
+  createdBy String   // Admin ID
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }

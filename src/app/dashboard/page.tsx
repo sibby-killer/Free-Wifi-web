@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect } from "react";
@@ -10,6 +11,7 @@ import { ChatTab } from "@/components/ChatTab";
 import { OrdersTab } from "@/components/OrdersTab";
 import { NotificationsTab } from "@/components/NotificationsTab";
 import { ReportTab } from "@/components/ReportTab";
+import { AccountTab } from "@/components/AccountTab";
 import {
   DashboardIcon,
   StarIcon,
@@ -27,13 +29,14 @@ import {
 export default function DashboardPage() {
   const { isLoaded, isSignedIn, user } = useUser();
   const { signOut } = useClerk();
-  // added 'account' tab
+
   const [activeTab, setActiveTab] = useState<"dashboard" | "reviews" | "chat" | "orders" | "notifications" | "report" | "account">("dashboard");
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const [userInfo, setUserInfo] = useState<any>(null);
   const [unreadChatCount, setUnreadChatCount] = useState(0);
   const [greeting, setGreeting] = useState("Hello");
+  const [notification, setNotification] = useState<{ visible: boolean, title: string, message: string } | null>(null);
 
   // Determine Greeting based on time
   useEffect(() => {
@@ -46,27 +49,11 @@ export default function DashboardPage() {
   // Theme Sync
   useEffect(() => {
     if (userInfo?.theme) {
-      // Apply theme logic here or saved in context? 
-      // For now, we just save it. Implementation of actual CSS variables/class would go here.
-      // e.g., document.documentElement.setAttribute('data-theme', userInfo.theme);
+      // document.documentElement.setAttribute('data-theme', userInfo.theme);
     }
   }, [userInfo]);
 
-  const handleThemeChange = async (theme: string) => {
-    // Optimistic update
-    setUserInfo({ ...userInfo, theme });
-    try {
-      await fetch("/api/users/theme", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ theme })
-      });
-    } catch (err) {
-      console.error("Failed to update theme", err);
-    }
-  };
-
-  // Auto-sync user and check admin status
+  // Auto-sync user and check admin status + Polling
   useEffect(() => {
     if (isSignedIn && user) {
       const initDashboard = async () => {
@@ -104,10 +91,26 @@ export default function DashboardPage() {
         }
       }, 30000);
 
-      return () => clearInterval(interval);
+      // 4. Profile Completion Check (30s delay)
+      const profileTimer = setTimeout(() => {
+        if (userInfo && !userInfo.profileComplete) {
+          const isComplete = !!(userInfo.fullName && userInfo.phoneNumber && userInfo.region && userInfo.subLocation && userInfo.address);
+          if (!isComplete) {
+            setNotification({
+              visible: true,
+              title: "Complete Your Profile! 📝",
+              message: "Add your phone number and address to help us serve you better."
+            });
+          }
+        }
+      }, 30000);
 
+      return () => {
+        clearInterval(interval);
+        clearTimeout(profileTimer);
+      };
     }
-  }, [isSignedIn, user]);
+  }, [isSignedIn, user, userInfo]); // Added userInfo dependency to re-check when it loads
 
   // Redirect if Admin (Metadata is source of truth for navigation)
   useEffect(() => {
@@ -122,10 +125,6 @@ export default function DashboardPage() {
         <div className="text-lg">Loading...</div>
       </div>
     );
-  }
-
-  if (!isSignedIn) {
-    redirect("/");
   }
 
   if (!isSignedIn) {
@@ -326,60 +325,7 @@ export default function DashboardPage() {
         )}
 
         {/* Account Tab */}
-        {activeTab === "account" && (
-          <div className="space-y-6">
-            <h1 className="text-2xl font-bold text-[#1A1A2E]">Account Settings</h1>
-
-            {/* Profile Card */}
-            <div className="rounded-2xl bg-white p-6 shadow-md">
-              <h2 className="text-lg font-semibold text-[#1A1A2E] mb-4">Profile</h2>
-              <div className="space-y-3">
-                <div className="flex justify-between border-b pb-2">
-                  <span className="text-[#6B7280]">Name</span>
-                  <span className="font-medium text-[#1A1A2E]">{user?.fullName || "Not set"}</span>
-                </div>
-                <div className="flex justify-between border-b pb-2">
-                  <span className="text-[#6B7280]">Email</span>
-                  <span className="font-medium text-[#1A1A2E]">{user?.primaryEmailAddress?.emailAddress}</span>
-                </div>
-                <div className="flex justify-between border-b pb-2">
-                  <span className="text-[#6B7280]">Username</span>
-                  <span className="font-medium text-[#1A1A2E]">{user?.username || "Not set"}</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Theme Switcher */}
-            <div className="rounded-2xl bg-white p-6 shadow-md">
-              <h2 className="text-lg font-semibold text-[#1A1A2E] mb-4">Theme Preference</h2>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                {[
-                  { id: 'light', name: 'Light', color: 'bg-white border-2' },
-                  { id: 'dark', name: 'Dark', color: 'bg-gray-900 text-white' },
-                  { id: 'ocean', name: 'Ocean', color: 'bg-blue-900 text-white' },
-                  { id: 'forest', name: 'Forest', color: 'bg-green-900 text-white' }
-                ].map((t) => (
-                  <button
-                    key={t.id}
-                    onClick={() => handleThemeChange(t.id)}
-                    className={`p-4 rounded-xl shadow-sm transition-transform hover:scale-105 flex flex-col items-center gap-2 ${t.color} ${userInfo?.theme === t.id ? 'ring-2 ring-offset-2 ring-[#0066FF]' : ''}`}
-                  >
-                    <div className="h-6 w-6 rounded-full border border-gray-300 bg-current opacity-50"></div>
-                    <span className="font-medium">{t.name}</span>
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Security (Placeholder) */}
-            <div className="rounded-2xl bg-white p-6 shadow-md">
-              <h2 className="text-lg font-semibold text-[#1A1A2E] mb-4">Security</h2>
-              <button className="text-[#0066FF] hover:underline" onClick={() => setActiveTab('report')}>
-                Need to reset password? Contact Support or Logout.
-              </button>
-            </div>
-          </div>
-        )}
+        {activeTab === "account" && <AccountTab user={userInfo} onUpdate={setUserInfo} />}
 
         {activeTab === "reviews" && <ReviewsTab />}
         {activeTab === "chat" && <ChatTab />}
@@ -431,6 +377,26 @@ export default function DashboardPage() {
           </button>
         </div>
       </nav>
+
+      {/* Floating Notification Toast */}
+      {notification?.visible && (
+        <div className="fixed bottom-20 right-4 z-50 w-80 animate-slide-up rounded-xl bg-white p-4 shadow-2xl border-l-4 border-blue-600 lg:bottom-4">
+          <div className="flex justify-between items-start mb-2">
+            <h4 className="font-bold text-gray-900">{notification.title}</h4>
+            <button onClick={() => setNotification(null)} className="text-gray-400 hover:text-gray-600">✕</button>
+          </div>
+          <p className="text-sm text-gray-600 mb-3">{notification.message}</p>
+          <button
+            onClick={() => {
+              setActiveTab("account");
+              setNotification(null);
+            }}
+            className="w-full rounded-lg bg-blue-600 py-2 text-sm font-medium text-white hover:bg-blue-700"
+          >
+            Update Now →
+          </button>
+        </div>
+      )}
     </div>
   );
 }
