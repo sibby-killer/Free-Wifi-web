@@ -18,21 +18,22 @@ export async function GET(req: NextRequest) {
 
 // POST: Create a new template
 export async function POST(req: NextRequest) {
-    const { auth: { userId } } = await requireAdmin();
-    const body = await req.json();
-    const { name, content, category } = body;
+    try {
+        const { auth: { userId } } = await requireAdmin();
+        const body = await req.json();
+        const { name, content, category } = body;
 
-    const template = await prisma.messageTemplate.create({
-        data: {
-            name,
-            content,
-            category,
-            createdBy: userId
-        }
-    });
+        const template = await prisma.messageTemplate.create({
+            data: {
+                name,
+                content,
+                category,
+                createdBy: userId
+            }
+        });
 
-    return NextResponse.json(template);
-} catch (error) {
-    return NextResponse.json({ error: "Failed to create template" }, { status: 500 });
-}
+        return NextResponse.json(template);
+    } catch (error) {
+        return NextResponse.json({ error: "Failed to create template" }, { status: 500 });
+    }
 }
