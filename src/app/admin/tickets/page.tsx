@@ -1,25 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { ToolIcon, CheckIcon } from "@/components/ui/Icons";
-
-interface Ticket {
-    id: string;
-    subject?: string; // or problemType
-    problemType: string;
-    description: string;
-    urgency: string;
-    status: string;
-    createdAt: string;
-    user: {
-        fullName: string;
-        phoneNumber: string;
-    };
-}
 
 export default function AdminTicketsPage() {
-    const [tickets, setTickets] = useState<Ticket[]>([]);
+    const [tickets, setTickets] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
+    const [editingId, setEditingId] = useState<string | null>(null);
+    const [reply, setReply] = useState("");
 
     useEffect(() => {
         fetchTickets();
@@ -27,81 +14,103 @@ export default function AdminTicketsPage() {
 
     const fetchTickets = async () => {
         try {
-            const res = await fetch("/api/tickets");
-            if (res.ok) {
-                const data = await res.json();
-                setTickets(data.tickets || []);
-            }
-        } catch (err) {
-            console.error(err);
-        } finally {
+            const res = await fetch("/api/admin/tickets");
+            const data = await res.json();
+            setTickets(data.tickets || []);
             setLoading(false);
-        }
+        } catch (err) { console.error(err); setLoading(false); }
     };
 
-    const markResolved = async (id: string) => {
-        if (!confirm("Mark this ticket as resolved?")) return;
+    const handleUpdate = async (id: string, status: string, response?: string) => {
         try {
-            const res = await fetch("/api/tickets", {
+            const res = await fetch("/api/admin/tickets", {
                 method: "PUT",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ ticketId: id, status: "resolved" })
+                body: JSON.stringify({ id, status, adminResponse: response })
             });
             if (res.ok) {
+                setEditingId(null);
+                setReply("");
                 fetchTickets();
-            } else {
-                alert("Failed");
             }
-        } catch (err) {
-            alert("Error");
-        }
+        } catch (err) { alert("Error updating"); }
     };
 
     return (
-        <div className="p-6 max-w-7xl mx-auto">
-            <h1 className="text-3xl font-bold mb-6 text-[#1A1A2E]">Support Tickets</h1>
+        <div className="space-y-6">
+            <h1 className="text-2xl font-bold text-gray-900">Support Tickets</h1>
 
-            {loading ? (
-                <div>Loading...</div>
-            ) : (
-                <div className="grid gap-4">
-                    {tickets.map(ticket => (
-                        <div key={ticket.id} className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex justify-between items-start">
-                            <div>
-                                <div className="flex items-center gap-3 mb-2">
-                                    <span className={`px-2 py-1 rounded text-xs font-bold uppercase ${ticket.status === 'resolved' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'
-                                        }`}>
-                                        {ticket.status}
-                                    </span>
-                                    <span className={`px-2 py-1 rounded text-xs font-bold uppercase ${ticket.urgency === 'critical' ? 'bg-red-100 text-red-700' : 'bg-gray-100 text-gray-700'
-                                        }`}>
-                                        {ticket.urgency}
-                                    </span>
-                                    <span className="text-sm text-gray-500">
-                                        {new Date(ticket.createdAt).toLocaleDateString()}
-                                    </span>
+            <div className="grid gap-6">
+                {loading ? (
+                    <div>Loading...</div>
+                ) : tickets.length === 0 ? (
+                    <div>No tickets found.</div>
+                ) : (
+                    tickets.map((t) => (
+                        <div key={t.id} className="rounded-xl bg-white p-6 shadow-sm">
+                            <div className="flex justify-between items-start">
+                                <div>
+                                    <div className="flex items-center gap-2">
+                                        <span className={`px-2 py-0.5 rounded text-xs uppercase font-bold text-white ${t.status === 'open' ? 'bg-red-500' : 'bg-green-500'}`}>
+                                            {t.status}
+                                        </span>
+                                        <h3 className="font-bold text-gray-900">{t.problemType}</h3>
+                                    </div>
+                                    <p className="mt-1 text-gray-600">{t.description}</p>
+                                    <div className="mt-2 text-sm text-gray-500">
+                                        From: {t.user?.fullName} ({t.user?.phoneNumber}) • {new Date(t.createdAt).toLocaleString()}
+                                    </div>
                                 </div>
-                                <h3 className="text-lg font-semibold text-[#1A1A2E]">{ticket.problemType}</h3>
-                                <p className="text-gray-600 mt-1">{ticket.description}</p>
-                                <div className="mt-3 text-sm text-gray-500">
-                                    User: <span className="font-medium text-gray-900">{ticket.user?.fullName}</span> •
-                                    Phone: <span className="font-medium text-gray-900">{ticket.user?.phoneNumber}</span>
+                                <div className="flex gap-2">
+                                    {t.status === 'open' && (
+                                        <button
+                                            onClick={() => handleUpdate(t.id, 'resolved')}
+                                            className="px-3 py-1 bg-green-100 text-green-700 rounded text-sm font-medium hover:bg-green-200"
+                                        >
+                                            Resolve
+                                        </button>
+                                    )}
+                                    <button
+                                        onClick={() => setEditingId(editingId === t.id ? null : t.id)}
+                                        className="px-3 py-1 bg-blue-100 text-blue-700 rounded text-sm font-medium hover:bg-blue-200"
+                                    >
+                                        {editingId === t.id ? "Cancel" : "Reply"}
+                                    </button>
                                 </div>
                             </div>
 
-                            {ticket.status !== 'resolved' && (
-                                <button
-                                    onClick={() => markResolved(ticket.id)}
-                                    className="flex items-center gap-2 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors"
-                                >
-                                    <CheckIcon size={18} /> Resolve
-                                </button>
+                            {/* Admin Response Display */}
+                            {t.adminResponse && (
+                                <div className="mt-4 border-t pt-3">
+                                    <p className="text-sm font-semibold text-gray-700">Admin Response:</p>
+                                    <p className="text-sm text-gray-600">{t.adminResponse}</p>
+                                </div>
+                            )}
+
+                            {/* Reply Editor */}
+                            {editingId === t.id && (
+                                <div className="mt-4 bg-gray-50 p-4 rounded-lg">
+                                    <textarea
+                                        className="w-full border rounded p-2 text-sm"
+                                        placeholder="Write a response..."
+                                        rows={3}
+                                        value={reply}
+                                        onChange={(e) => setReply(e.target.value)}
+                                    />
+                                    <div className="mt-2 flex justify-end gap-2">
+                                        <button
+                                            onClick={() => handleUpdate(t.id, 'open', reply)} // Status remains open if just replying? Or resolved? Let's keep open unless resolved explicitly.
+                                            className="px-4 py-2 bg-blue-600 text-white rounded text-sm hover:bg-blue-700"
+                                        >
+                                            Send Reply
+                                        </button>
+                                    </div>
+                                </div>
                             )}
                         </div>
-                    ))}
-                    {tickets.length === 0 && <p>No tickets found.</p>}
-                </div>
-            )}
+                    ))
+                )}
+            </div>
         </div>
     );
 }

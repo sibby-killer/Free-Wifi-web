@@ -1,4 +1,4 @@
-// Prisma schema for FreeWiFi KE (from prompt.txt)
+// Prisma schema for FreeWiFi KE (VIBE Update)
 
 generator client {
   provider = "prisma-client-js"
@@ -20,12 +20,14 @@ model User {
   subLocation    String
   currentPlan    String?
   renewalDate    DateTime?
+  theme          String   @default("light") // light, dark, ocean, forest
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
-  orders       Order[]
-  tickets      Ticket[]
-  reviews      Review[]
+  orders            Order[]
+  tickets           Ticket[]
+  reviews           Review[]
+  userNotifications UserNotification[]
 }
 
 // Admin model
@@ -34,6 +36,70 @@ model Admin {
   fullName  String
   email     String   @unique
   password  String   // hashed
+  theme     String   @default("light")
+  createdAt DateTime @default(now())
+
+  logs              AdminLog[]
+  sentNotifications SentNotification[]
+}
+
+// Admin Activity Log (NEW)
+model AdminLog {
+  id          String   @id @default(cuid())
+  adminId     String?  // Can be null if it's a system action or superadmin
+  admin       Admin?   @relation(fields: [adminId], references: [id])
+  action      String   // login, logout, order_update, ticket_response
+  entityType  String?  // order, ticket, user, review, chat
+  entityId    String?
+  details     String   @db.Text
+  ipAddress   String?
+  createdAt   DateTime @default(now())
+}
+
+// System Notification (for Admin) (NEW)
+model SystemNotification {
+  id          String   @id @default(cuid())
+  type        String   // order, ticket, chat, user, review
+  title       String
+  message     String
+  entityType  String?
+  entityId    String?
+  isRead      Boolean  @default(false)
+  createdAt   DateTime @default(now())
+}
+
+// User Notification (for User) (NEW)
+model UserNotification {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id])
+  title       String
+  message     String
+  type        String   // system, admin_sent, order_update, ticket_update
+  isRead      Boolean  @default(false)
+  createdAt   DateTime @default(now())
+}
+
+// Sent Notification Logs (Bulk/Individual) (NEW)
+model SentNotification {
+  id          String   @id @default(cuid())
+  adminId     String?
+  admin       Admin?   @relation(fields: [adminId], references: [id])
+  type        String   // bulk, individual
+  subject     String
+  message     String   @db.Text
+  recipients  String   @db.Text // JSON
+  sentCount   Int
+  createdAt   DateTime @default(now())
+}
+
+// Password Reset Token (NEW)
+model PasswordResetToken {
+  id        String   @id @default(cuid())
+  email     String
+  token     String   @unique
+  expiresAt DateTime
+  used      Boolean  @default(false)
   createdAt DateTime @default(now())
 }
 
@@ -42,8 +108,8 @@ model Order {
   id             String   @id @default(cuid())
   userId         String
   user           User     @relation(fields: [userId], references: [id])
-  plan           String   // "10mbps" or "12mbps"
-  price          Int      // 1500 or 2000
+  plan           String
+  price          Int
   region         String
   subLocation    String
   address        String
@@ -51,7 +117,7 @@ model Order {
   preferredDate  DateTime
   whatsappNumber String
   notes          String?
-  status         String   @default("pending") // pending, in_progress, completed, cancelled
+  status         String   @default("pending")
   adminNotes     String?
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
@@ -64,8 +130,8 @@ model Ticket {
   user        User     @relation(fields: [userId], references: [id])
   problemType String
   description String
-  urgency     String   // low, medium, high
-  status      String   @default("open") // open, in_progress, resolved
+  urgency     String
+  status      String   @default("open")
   adminNotes  String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
@@ -76,7 +142,7 @@ model Review {
   id          String   @id @default(cuid())
   userId      String
   user        User     @relation(fields: [userId], references: [id])
-  rating      Int      // 1-5
+  rating      Int
   content     String?
   region      String
   subLocation String
@@ -87,21 +153,25 @@ model Review {
 // AI Chat Message model
 model ChatMessage {
   id           String   @id @default(cuid())
-  userId       String   // Clerk user ID (no foreign key)
-  role         String   // "user" or "assistant"
+  userId       String
+  role         String   // "user", "assistant", "admin"
   content      String   @db.Text
   mentionAdmin Boolean  @default(false)
   isRead       Boolean  @default(false)
+  adminRead    Boolean  @default(false)    // NEW
+  adminStatus  String   @default("new")    // NEW: new, pending, resolved
+  adminReply   String?                     // NEW
+  adminReplyAt DateTime?                   // NEW
   createdAt    DateTime @default(now())
 }
 
-// Notification model
+// Legacy Notification model (Keeping for safety, but VIBE uses System/User/SentNotification)
 model Notification {
   id        String   @id @default(cuid())
   title     String
   message   String
-  type      String   @default("info") // info, success, warning, alert
-  userId    String?  // Optional: if null, it's a global notification
+  type      String   @default("info")
+  userId    String?
   isGlobal  Boolean  @default(false)
   createdAt DateTime @default(now())
 }

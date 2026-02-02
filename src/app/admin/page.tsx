@@ -1,236 +1,192 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useUser } from "@clerk/nextjs";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
+import {
+  UserIcon,
+  OrderIcon,
+  ChatIcon,
+  BellIcon // Using Bell for Ticket icon equivalent
+} from "@/components/ui/Icons";
+
+// Helper components
+const StatCard = ({ title, value, color, icon: Icon }: any) => (
+  <div className="flex items-center justify-between rounded-xl bg-white p-6 shadow-sm transition-transform hover:scale-105">
+    <div>
+      <p className="text-sm font-medium text-gray-500">{title}</p>
+      <h3 className="mt-2 text-3xl font-bold text-gray-900">{value}</h3>
+    </div>
+    <div className={`flex h-12 w-12 items-center justify-center rounded-full bg-${color}-100 text-${color}-600`}>
+      <Icon size={24} />
+    </div>
+  </div>
+);
+
+// Quick Action Button
+const ActionBtn = ({ label, href, color }: any) => (
+  <Link href={href} className="flex flex-col items-center justify-center gap-2 rounded-xl bg-white p-4 text-center shadow-sm transition-colors hover:bg-gray-50">
+    <div className={`flex h-10 w-10 items-center justify-center rounded-full bg-${color}-100 text-${color}-600`}>
+      <span className="text-xl">+</span>
+    </div>
+    <span className="font-semibold text-gray-700">{label}</span>
+  </Link>
+);
 
 export default function AdminHomePage() {
-  const { user, isLoaded } = useUser();
-  const router = useRouter();
-  const [stats, setStats] = useState({
-    totalOrders: 0,
-    pendingOrders: 0,
-    openTickets: 0,
-    totalUsers: 0,
-  });
-  const [notification, setNotification] = useState({
-    title: "",
-    message: "",
-    type: "info",
-    isGlobal: true,
-  });
-
-  const handleNotificationSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    try {
-      const res = await fetch("/api/notifications", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(notification),
-      });
-      if (res.ok) {
-        alert("Notification Sent!");
-        setNotification({ title: "", message: "", type: "info", isGlobal: true });
-      } else {
-        alert("Failed to send");
-      }
-    } catch (err) {
-      console.error(err);
-      alert("Error sending");
-    }
-  };
+  const [data, setData] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (isLoaded && user) {
-      const role = user.publicMetadata?.role as string | undefined;
-      if (role !== "admin") {
-        router.push("/dashboard");
-      }
-    }
-  }, [isLoaded, user, router]);
+    fetch("/api/admin/stats")
+      .then((res) => res.json())
+      .then((res) => {
+        setData(res);
+        setLoading(false);
+      })
+      .catch((err) => {
+        console.error(err);
+        setLoading(false);
+      });
+  }, []);
 
-  if (!isLoaded) {
-    return (
-      <div className="flex min-h-screen items-center justify-center">
-        <div className="text-lg">Loading...</div>
-      </div>
-    );
+  if (loading) {
+    return <div className="flex h-full items-center justify-center text-gray-500">Loading Dashboard...</div>;
   }
 
-  const role = user?.publicMetadata?.role as string | undefined;
-  if (role !== "admin") {
-    return null;
-  }
+  const { stats, activity } = data || {};
 
   return (
-    <div className="min-h-screen bg-[#F5F7FA]">
-      {/* Top Bar */}
-      <div className="sticky top-0 z-40 bg-white shadow-sm">
-        <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
-          <Link href="/" className="text-2xl font-bold text-[#0066FF]">
-            FreeWiFi KE Admin
-          </Link>
-          <div className="flex items-center gap-4">
-            <Link
-              href="/dashboard"
-              className="text-sm text-[#6B7280] hover:text-[#0066FF]"
-            >
-              User Dashboard
-            </Link>
-            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#FF6600] text-white font-semibold">
-              A
-            </div>
-          </div>
-        </div>
+    <div className="space-y-8">
+      {/* Header */}
+      <div>
+        <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
+        <p className="text-gray-500">Welcome back, Admin</p>
       </div>
 
-      <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
-        <h1 className="text-3xl font-bold text-[#1A1A2E]">Admin Dashboard</h1>
-        <p className="mt-2 text-[#6B7280]">Welcome to the admin area</p>
+      {/* Stats Row */}
+      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+        <StatCard
+          title="Total Users"
+          value={stats?.totalUsers || 0}
+          color="blue"
+          icon={UserIcon}
+        />
+        <StatCard
+          title="Pending Orders"
+          value={stats?.pendingOrders || 0}
+          color="orange"
+          icon={OrderIcon}
+        />
+        <StatCard
+          title="Open Tickets"
+          value={stats?.openTickets || 0}
+          color="red"
+          icon={BellIcon}
+        />
+        <StatCard
+          title="Total Revenue"
+          value={`KES ${(stats?.totalRevenue || 0).toLocaleString()}`}
+          color="green"
+          icon={OrderIcon}
+        />
+      </div>
 
-        {/* Stats Cards */}
-        <div className="mt-6 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-          <div className="rounded-2xl bg-white p-6 shadow-md">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-[#6B7280]">Total Orders</p>
-                <p className="mt-2 text-3xl font-bold text-[#1A1A2E]">{stats.totalOrders}</p>
-              </div>
-              <div className="text-4xl">📦</div>
+      <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
+        {/* Recent Activity Feed */}
+        <div className="col-span-2 space-y-6">
+          <h2 className="text-lg font-bold text-gray-900">Recent Activity</h2>
+
+          {/* Recent Orders */}
+          <div className="rounded-xl bg-white p-6 shadow-sm">
+            <div className="mb-4 flex items-center justify-between">
+              <h3 className="font-semibold text-gray-800">New Orders</h3>
+              <Link href="/admin/orders" className="text-sm text-blue-600 hover:underline">View All</Link>
+            </div>
+            <div className="space-y-4">
+              {activity?.orders?.length > 0 ? (
+                activity.orders.map((order: any) => (
+                  <div key={order.id} className="flex items-center justify-between border-b pb-3 last:border-0 last:pb-0">
+                    <div>
+                      <p className="font-medium text-gray-900">{order.user?.fullName || "Guest"}</p>
+                      <p className="text-xs text-gray-500">{order.plan} Plan • {order.region}</p>
+                    </div>
+                    <span className="rounded-full bg-orange-100 px-2 py-1 text-xs font-medium text-orange-700">
+                      {order.status}
+                    </span>
+                  </div>
+                ))
+              ) : (
+                <p className="text-sm text-gray-500">No recent orders.</p>
+              )}
             </div>
           </div>
-          <div className="rounded-2xl bg-white p-6 shadow-md">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-[#6B7280]">Pending Orders</p>
-                <p className="mt-2 text-3xl font-bold text-[#F59E0B]">{stats.pendingOrders}</p>
-              </div>
-              <div className="text-4xl">⏳</div>
+
+          {/* Recent Chats */}
+          <div className="rounded-xl bg-white p-6 shadow-sm">
+            <div className="mb-4 flex items-center justify-between">
+              <h3 className="font-semibold text-gray-800">New Messages (@admin)</h3>
+              <Link href="/admin/chats" className="text-sm text-blue-600 hover:underline">View All</Link>
             </div>
-          </div>
-          <div className="rounded-2xl bg-white p-6 shadow-md">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-[#6B7280]">Open Tickets</p>
-                <p className="mt-2 text-3xl font-bold text-[#EF4444]">{stats.openTickets}</p>
-              </div>
-              <div className="text-4xl">🎫</div>
-            </div>
-          </div>
-          <div className="rounded-2xl bg-white p-6 shadow-md">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-[#6B7280]">Total Users</p>
-                <p className="mt-2 text-3xl font-bold text-[#0066FF]">{stats.totalUsers}</p>
-              </div>
-              <div className="text-4xl">👥</div>
+            <div className="space-y-4">
+              {activity?.chats?.length > 0 ? (
+                activity.chats.map((chat: any) => (
+                  <div key={chat.id} className="flex items-center justify-between border-b pb-3 last:border-0 last:pb-0">
+                    <div className="flex items-center gap-3">
+                      <div className="h-8 w-8 rounded-full bg-blue-100 text-center leading-8 text-xs font-bold text-blue-600">
+                        {chat.user?.fullName?.[0] || "?"}
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-gray-900">{chat.user?.fullName}</p>
+                        <p className="line-clamp-1 max-w-xs text-xs text-gray-500">{chat.content}</p>
+                      </div>
+                    </div>
+                    <span className="text-xs text-gray-400">
+                      {new Date(chat.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    </span>
+                  </div>
+                ))
+              ) : (
+                <p className="text-sm text-gray-500">No new messages.</p>
+              )}
             </div>
           </div>
         </div>
 
-        {/* Quick Links */}
-        <div className="mt-8">
-          <h2 className="text-xl font-semibold text-[#1A1A2E]">Quick Access</h2>
-          <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <Link
-              href="/admin/orders"
-              className="flex flex-col items-center gap-2 rounded-xl bg-white p-6 shadow-md transition-all hover:scale-105 hover:shadow-lg"
-            >
-              <span className="text-4xl">📦</span>
-              <span className="font-semibold text-[#1A1A2E]">Manage Orders</span>
-            </Link>
-            <Link
-              href="/admin/tickets"
-              className="flex flex-col items-center gap-2 rounded-xl bg-white p-6 shadow-md transition-all hover:scale-105 hover:shadow-lg"
-            >
-              <span className="text-4xl">🎫</span>
-              <span className="font-semibold text-[#1A1A2E]">Support Tickets</span>
-            </Link>
-            <Link
-              href="/admin/users"
-              className="flex flex-col items-center gap-2 rounded-xl bg-white p-6 shadow-md transition-all hover:scale-105 hover:shadow-lg"
-            >
-              <span className="text-4xl">👥</span>
-              <span className="font-semibold text-[#1A1A2E]">Users</span>
-            </Link>
-            <Link
-              href="/admin/reviews"
-              className="flex flex-col items-center gap-2 rounded-xl bg-white p-6 shadow-md transition-all hover:scale-105 hover:shadow-lg"
-            >
-              <span className="text-4xl">⭐</span>
-              <span className="font-semibold text-[#1A1A2E]">Reviews</span>
-            </Link>
+        {/* Quick Actions & Tickets */}
+        <div className="space-y-6">
+          {/* Quick Actions */}
+          <div className="rounded-xl bg-white p-6 shadow-sm">
+            <h3 className="mb-4 font-semibold text-gray-800">Quick Actions</h3>
+            <div className="grid grid-cols-2 gap-4">
+              <ActionBtn label="Send Notification" href="/admin/notifications" color="blue" />
+              <ActionBtn label="View Orders" href="/admin/orders" color="green" />
+              <ActionBtn label="Support Tickets" href="/admin/tickets" color="red" />
+              <ActionBtn label="Manage Users" href="/admin/users" color="purple" />
+            </div>
           </div>
-        </div>
 
-        {/* Broadcast Notification */}
-        <div className="mt-8 rounded-2xl bg-white p-6 shadow-md">
-          <h2 className="text-xl font-semibold text-[#1A1A2E]">Broadcast Notification</h2>
-          <form onSubmit={handleNotificationSubmit} className="mt-4 space-y-4">
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Title</label>
-                <input
-                  type="text"
-                  required
-                  className="mt-1 w-full rounded-lg border border-gray-300 p-2"
-                  value={notification.title}
-                  onChange={(e) => setNotification({ ...notification, title: e.target.value })}
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Type</label>
-                <select
-                  className="mt-1 w-full rounded-lg border border-gray-300 p-2"
-                  value={notification.type}
-                  onChange={(e) => setNotification({ ...notification, type: e.target.value })}
-                >
-                  <option value="info">Info (Blue)</option>
-                  <option value="success">Success (Green)</option>
-                  <option value="warning">Warning (Yellow)</option>
-                  <option value="alert">Alert (Red)</option>
-                </select>
-              </div>
+          {/* Open Tickets */}
+          <div className="rounded-xl bg-white p-6 shadow-sm">
+            <div className="mb-4 flex items-center justify-between">
+              <h3 className="font-semibold text-gray-800">Recent Tickets</h3>
+              <Link href="/admin/tickets" className="text-sm text-blue-600 hover:underline">View All</Link>
             </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700">Message</label>
-              <textarea
-                required
-                rows={3}
-                className="mt-1 w-full rounded-lg border border-gray-300 p-2"
-                value={notification.message}
-                onChange={(e) => setNotification({ ...notification, message: e.target.value })}
-              />
+            <div className="space-y-4">
+              {activity?.tickets?.length > 0 ? (
+                activity.tickets.map((ticket: any) => (
+                  <div key={ticket.id} className="border-l-4 border-red-500 bg-red-50 p-3">
+                    <p className="text-sm font-medium text-gray-900">{ticket.problemType}</p>
+                    <p className="text-xs text-gray-600">by {ticket.user?.fullName}</p>
+                  </div>
+                ))
+              ) : (
+                <p className="text-sm text-gray-500">No open tickets.</p>
+              )}
             </div>
-            <div className="flex items-center justify-between">
-              <label className="flex items-center gap-2 text-sm text-gray-700">
-                <input
-                  type="checkbox"
-                  checked={notification.isGlobal}
-                  onChange={(e) => setNotification({ ...notification, isGlobal: e.target.checked })}
-                  className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                />
-                Send to All Users (Global)
-              </label>
-              <button
-                type="submit"
-                className="rounded-lg bg-blue-600 px-6 py-2 text-white hover:bg-blue-700 transition-colors"
-              >
-                Send Notification
-              </button>
-            </div>
-          </form>
-        </div>
-
-        {/* Recent Activity */}
-        <div className="mt-8 rounded-2xl bg-white p-6 shadow-md">
-          <h2 className="text-xl font-semibold text-[#1A1A2E]">Recent Activity</h2>
-          <div className="mt-4 text-center text-[#6B7280]">
-            <p>No recent activity</p>
           </div>
+
         </div>
       </div>
-    </div >
+    </div>
   );
 }
