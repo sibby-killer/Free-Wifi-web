@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { BellIcon, ChatIcon } from "@/components/ui/Icons";
 
 export default function AdminNotificationsPage() {
@@ -19,11 +19,7 @@ export default function AdminNotificationsPage() {
     });
     const [sending, setSending] = useState(false);
 
-    useEffect(() => {
-        fetchData();
-    }, [activeTab]);
-
-    const fetchData = async () => {
+    const fetchData = useCallback(async () => {
         setLoading(true);
         try {
             if (activeTab === "inbox") {
@@ -40,7 +36,11 @@ export default function AdminNotificationsPage() {
         } finally {
             setLoading(false);
         }
-    };
+    }, [activeTab]);
+
+    useEffect(() => {
+        fetchData();
+    }, [fetchData]);
 
     const handleMarkRead = async (id: string) => {
         await fetch("/api/admin/notifications", {

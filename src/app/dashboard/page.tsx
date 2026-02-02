@@ -109,6 +109,13 @@ export default function DashboardPage() {
     }
   }, [isSignedIn, user]);
 
+  // Redirect if Admin (Metadata is source of truth for navigation)
+  useEffect(() => {
+    if (isLoaded && user?.publicMetadata?.role === "admin") {
+      redirect("/admin");
+    }
+  }, [isLoaded, user]);
+
   if (!isLoaded) {
     return (
       <div className="flex min-h-screen items-center justify-center">
@@ -117,12 +124,9 @@ export default function DashboardPage() {
     );
   }
 
-  // Redirect if Admin (Metadata is source of truth for navigation)
-  useEffect(() => {
-    if (isLoaded && user?.publicMetadata?.role === "admin") {
-      redirect("/admin");
-    }
-  }, [isLoaded, user]);
+  if (!isSignedIn) {
+    redirect("/");
+  }
 
   if (!isSignedIn) {
     redirect("/");

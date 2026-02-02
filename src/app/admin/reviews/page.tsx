@@ -59,7 +59,7 @@ export default function AdminReviewsPage() {
                                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 6L6 18M6 6l12 12"></path></svg>
                                 </button>
                             </div>
-                            <p className="text-gray-800 text-sm mb-4 line-clamp-3">"{r.comment}"</p>
+                            <p className="text-gray-800 text-sm mb-4 line-clamp-3">&quot;{r.comment}&quot;</p>
                             <div className="flex justify-between items-center text-xs text-gray-500 border-t pt-3">
                                 <span className="font-medium text-gray-900 group-hover:text-blue-600 transition-colors">{r.user?.fullName || "Guest"}</span>
                                 <span>{new Date(r.createdAt).toLocaleDateString()}</span>

@@ -1,17 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 
 export default function AdminLogsPage() {
     const [logs, setLogs] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [filter, setFilter] = useState("all");
 
-    useEffect(() => {
-        fetchLogs();
-    }, [filter]);
-
-    const fetchLogs = async () => {
+    const fetchLogs = useCallback(async () => {
         setLoading(true);
         try {
             const query = filter !== "all" ? `?entityType=${filter}` : "";
@@ -23,7 +19,11 @@ export default function AdminLogsPage() {
         } finally {
             setLoading(false);
         }
-    };
+    }, [filter]);
+
+    useEffect(() => {
+        fetchLogs();
+    }, [fetchLogs]);
 
     return (
         <div className="space-y-6">
