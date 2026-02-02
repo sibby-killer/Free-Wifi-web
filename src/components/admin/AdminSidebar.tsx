@@ -40,7 +40,7 @@ export function AdminSidebar({ mobileOpen, setMobileOpen }: { mobileOpen: boolea
     const isManageActive = pathname.startsWith("/admin/") && pathname !== "/admin" && !pathname.startsWith("/admin/notifications") && !pathname.startsWith("/admin/logs") && !pathname.startsWith("/admin/settings");
 
     const handleLogout = () => {
-        signOut(() => window.location.href = "/");
+        signOut(() => { window.location.href = "/" });
     };
 
     return (
