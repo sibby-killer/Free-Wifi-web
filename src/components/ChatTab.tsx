@@ -5,7 +5,7 @@ import { AIChatIcon, AlertIcon } from "@/components/ui/Icons";
 
 interface Message {
   id: string;
-  role: "user" | "assistant";
+  role: "user" | "assistant" | "admin";
   content: string;
   createdAt: string;
   mentionAdmin: boolean;
