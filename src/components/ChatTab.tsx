@@ -21,7 +21,16 @@ export function ChatTab() {
 
   useEffect(() => {
     fetchChatHistory();
+    markAsRead();
   }, []);
+
+  const markAsRead = async () => {
+    try {
+      await fetch("/api/chat/unread", { method: "POST" });
+    } catch (err) {
+      console.error("Failed to mark chat as read");
+    }
+  };
 
   useEffect(() => {
     scrollToBottom();
@@ -177,10 +186,12 @@ export function ChatTab() {
                 <div
                   className={`flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full text-sm font-semibold ${message.role === "user"
                     ? "bg-[#00CC88] text-white"
-                    : "bg-[#0066FF] text-white"
+                    : message.role === "admin"
+                      ? "bg-[#FF6600] text-white" // Different color for Admin
+                      : "bg-[#0066FF] text-white"
                     }`}
                 >
-                  {message.role === "user" ? "U" : "AI"}
+                  {message.role === "user" ? "U" : message.role === "admin" ? "AD" : "AI"}
                 </div>
                 <div
                   className={`max-w-[80%] rounded-2xl p-4 ${message.role === "user"

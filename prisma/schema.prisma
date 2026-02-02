@@ -18,6 +18,8 @@ model User {
   phoneNumber    String
   region         String   // Kakamega or Bungoma
   subLocation    String
+  currentPlan    String?
+  renewalDate    DateTime?
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
@@ -89,6 +91,7 @@ model ChatMessage {
   role         String   // "user" or "assistant"
   content      String   @db.Text
   mentionAdmin Boolean  @default(false)
+  isRead       Boolean  @default(false)
   createdAt    DateTime @default(now())
 }
 

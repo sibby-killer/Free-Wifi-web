@@ -9,6 +9,7 @@ import { ReviewsTab } from "@/components/ReviewsTab";
 import { ChatTab } from "@/components/ChatTab";
 import { OrdersTab } from "@/components/OrdersTab";
 import { NotificationsTab } from "@/components/NotificationsTab";
+import { ReportTab } from "@/components/ReportTab";
 import {
   DashboardIcon,
   StarIcon,
@@ -25,9 +26,11 @@ import {
 export default function DashboardPage() {
   const { isLoaded, isSignedIn, user } = useUser();
   const { signOut } = useClerk();
-  const [activeTab, setActiveTab] = useState<"dashboard" | "reviews" | "chat" | "orders" | "notifications">("dashboard");
+  const [activeTab, setActiveTab] = useState<"dashboard" | "reviews" | "chat" | "orders" | "notifications" | "report">("dashboard");
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [userInfo, setUserInfo] = useState<any>(null);
+  const [unreadChatCount, setUnreadChatCount] = useState(0);
 
   // Auto-sync user and check admin status
   useEffect(() => {
@@ -37,17 +40,38 @@ export default function DashboardPage() {
           // 1. Sync User (Self-Healing)
           await fetch("/api/users/sync", { method: "POST" });
 
-          // 2. Check Admin Status
+          // 2. Check Admin Status & Get Plan Info
           const res = await fetch("/api/users");
           if (res.ok) {
             const data = await res.json();
             if (data.isAdmin) setIsAdmin(true);
+            if (data.user) setUserInfo(data.user);
           }
+
+          // 3. Fetch Unread Chat Count
+          const chatRes = await fetch("/api/chat/unread");
+          if (chatRes.ok) {
+            const chatData = await chatRes.json();
+            setUnreadChatCount(chatData.unreadCount || 0);
+          }
+
         } catch (err) {
           console.error("Dashboard init failed:", err);
         }
       };
       initDashboard();
+
+      // Poll for unread messages every 30s
+      const interval = setInterval(async () => {
+        const chatRes = await fetch("/api/chat/unread");
+        if (chatRes.ok) {
+          const chatData = await chatRes.json();
+          setUnreadChatCount(chatData.unreadCount || 0);
+        }
+      }, 30000);
+
+      return () => clearInterval(interval);
+
     }
   }, [isSignedIn, user]);
 
@@ -57,6 +81,11 @@ export default function DashboardPage() {
         <div className="text-lg">Loading...</div>
       </div>
     );
+  }
+
+  // Redirect admin to admin dashboard
+  if (isAdmin) {
+    redirect("/admin");
   }
 
   if (!isSignedIn) {
@@ -105,12 +134,17 @@ export default function DashboardPage() {
             </button>
             <button
               onClick={() => setActiveTab("chat")}
-              className={`flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors ${activeTab === "chat"
+              className={`flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors relative ${activeTab === "chat"
                 ? "bg-[#0066FF] text-white"
                 : "text-[#6B7280] hover:bg-gray-100"
                 }`}
             >
               <AIChatIcon size={18} /> AI Chat
+              {unreadChatCount > 0 && (
+                <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-[10px] text-white ring-2 ring-white">
+                  {unreadChatCount}
+                </span>
+              )}
             </button>
             <button
               onClick={() => setActiveTab("orders")}
@@ -200,17 +234,37 @@ export default function DashboardPage() {
               <h2 className="text-xl font-semibold text-[#1A1A2E]">Current Plan</h2>
               <div className="mt-4 flex items-center justify-between">
                 <div>
-                  <p className="text-[#6B7280]">No active plan</p>
-                  <p className="mt-1 text-sm text-[#6B7280]">
-                    Get started by ordering a plan
-                  </p>
+                  {userInfo?.currentPlan ? (
+                    <>
+                      <p className="text-2xl font-bold text-[#0066FF]">{userInfo.currentPlan}</p>
+                      {userInfo.renewalDate && (
+                        <p className="mt-1 text-sm text-[#6B7280]">
+                          Renewal: {new Date(userInfo.renewalDate).toLocaleDateString()}
+                        </p>
+                      )}
+                    </>
+                  ) : (
+                    <>
+                      <p className="text-[#6B7280]">No active plan</p>
+                      <p className="mt-1 text-sm text-[#6B7280]">
+                        Get started by ordering a plan
+                      </p>
+                    </>
+                  )}
                 </div>
-                <button
-                  onClick={() => setActiveTab("orders")}
-                  className="rounded-full bg-[#0066FF] px-6 py-2 text-sm font-semibold text-white transition-transform hover:scale-105 hover:bg-[#0052CC]"
-                >
-                  Order Now
-                </button>
+                {!userInfo?.currentPlan && (
+                  <button
+                    onClick={() => setActiveTab("orders")}
+                    className="rounded-full bg-[#0066FF] px-6 py-2 text-sm font-semibold text-white transition-transform hover:scale-105 hover:bg-[#0052CC]"
+                  >
+                    Order Now
+                  </button>
+                )}
+                {userInfo?.currentPlan && (
+                  <span className="rounded-full bg-green-100 px-3 py-1 text-xs font-semibold text-green-800">
+                    Active
+                  </span>
+                )}
               </div>
             </div>
 
@@ -227,7 +281,10 @@ export default function DashboardPage() {
                   </div>
                   <span className="font-semibold text-[#1A1A2E]">Order New Plan</span>
                 </button>
-                <button className="flex flex-col items-center gap-2 rounded-xl bg-white p-6 shadow-md transition-all hover:scale-105 hover:shadow-lg">
+                <button
+                  onClick={() => setActiveTab("report")}
+                  className="flex flex-col items-center gap-2 rounded-xl bg-white p-6 shadow-md transition-all hover:scale-105 hover:shadow-lg"
+                >
                   <div className="flex h-14 w-14 items-center justify-center rounded-full bg-[#FF6600]/10 text-[#FF6600]">
                     <ToolIcon size={32} />
                   </div>
@@ -272,6 +329,8 @@ export default function DashboardPage() {
 
         {activeTab === "orders" && <OrdersTab />}
 
+        {activeTab === "report" && <ReportTab />}
+
         {activeTab === "notifications" && <NotificationsTab />}
       </div>
 
@@ -305,10 +364,17 @@ export default function DashboardPage() {
           </button>
           <button
             onClick={() => setActiveTab("chat")}
-            className={`flex flex-col items-center gap-1 transition-colors ${activeTab === "chat" ? "text-[#0066FF]" : "text-[#6B7280]"
+            className={`flex flex-col items-center gap-1 transition-colors relative ${activeTab === "chat" ? "text-[#0066FF]" : "text-[#6B7280]"
               }`}
           >
-            <AIChatIcon size={24} />
+            <div className="relative">
+              <AIChatIcon size={24} />
+              {unreadChatCount > 0 && (
+                <span className="absolute -top-2 -right-2 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-[10px] text-white ring-2 ring-white">
+                  {unreadChatCount}
+                </span>
+              )}
+            </div>
             <span className="text-xs font-medium">AI Chat</span>
           </button>
           <button

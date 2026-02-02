@@ -58,8 +58,25 @@ export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
     const location = searchParams.get("location");
+    const showAll = searchParams.get("all"); // Param for admin to see all
 
-    const where: Record<string, unknown> = { approved: true };
+    // Check if Admin (only if showAll is requested)
+    let isAdmin = false;
+    if (showAll) {
+      const { userId } = await auth();
+      if (userId) {
+        const { clerkClient } = await import("@clerk/nextjs/server");
+        const clerkUser = await (await clerkClient()).users.getUser(userId);
+        const role = clerkUser.publicMetadata?.role as string | undefined;
+        isAdmin = role === "admin";
+      }
+    }
+
+    const where: Record<string, unknown> = {};
+
+    if (!isAdmin) {
+      where.approved = true;
+    }
 
     if (location && location !== "all") {
       const [region, subLocation] = location.split("-");
@@ -77,7 +94,7 @@ export async function GET(req: NextRequest) {
         },
       },
       orderBy: { createdAt: "desc" },
-      take: 50,
+      take: isAdmin ? 100 : 50,
     });
 
     return NextResponse.json({ reviews });
@@ -87,5 +104,30 @@ export async function GET(req: NextRequest) {
       { error: "Internal server error" },
       { status: 500 }
     );
+  }
+}
+
+export async function PUT(req: NextRequest) {
+  try {
+    const { userId } = await auth();
+    if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+    // Admin Check
+    const { clerkClient } = await import("@clerk/nextjs/server");
+    const clerkUser = await (await clerkClient()).users.getUser(userId);
+    const role = clerkUser.publicMetadata?.role as string | undefined;
+    if (role !== "admin") return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+
+    const { reviewId, approved } = await req.json();
+
+    const updated = await prisma.review.update({
+      where: { id: reviewId },
+      data: { approved }
+    });
+
+    return NextResponse.json({ success: true, review: updated });
+
+  } catch (error) {
+    return NextResponse.json({ error: "Error" }, { status: 500 });
   }
 }
