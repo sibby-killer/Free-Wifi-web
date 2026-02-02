@@ -9,8 +9,6 @@ import {
     ChatIcon,
     UserIcon,
     BellIcon,
-    ToolIcon, // Using Tool as Settings or general
-    LogIcon, //Need to add LogIcon to Icons.tsx if missing, or use alternate
 } from "@/components/ui/Icons";
 
 // Add specific icons if missing or repurpose
@@ -62,8 +60,8 @@ export function AdminSidebar({ mobileOpen, setMobileOpen }: { mobileOpen: boolea
                     <Link
                         href="/admin"
                         className={`flex items-center gap-3 rounded-lg px-4 py-3 text-sm font-medium transition-colors ${pathname === "/admin"
-                                ? "bg-[#0066FF]/10 text-[#0066FF]"
-                                : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                            ? "bg-[#0066FF]/10 text-[#0066FF]"
+                            : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
                             }`}
                     >
                         <DashboardIcon size={20} />
@@ -133,8 +131,8 @@ export function AdminSidebar({ mobileOpen, setMobileOpen }: { mobileOpen: boolea
                     <Link
                         href="/admin/notifications"
                         className={`flex items-center gap-3 rounded-lg px-4 py-3 text-sm font-medium transition-colors ${isActive("/admin/notifications")
-                                ? "bg-[#0066FF]/10 text-[#0066FF]"
-                                : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                            ? "bg-[#0066FF]/10 text-[#0066FF]"
+                            : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
                             }`}
                     >
                         <div className="relative">
@@ -147,8 +145,8 @@ export function AdminSidebar({ mobileOpen, setMobileOpen }: { mobileOpen: boolea
                     <Link
                         href="/admin/logs"
                         className={`flex items-center gap-3 rounded-lg px-4 py-3 text-sm font-medium transition-colors ${isActive("/admin/logs")
-                                ? "bg-[#0066FF]/10 text-[#0066FF]"
-                                : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                            ? "bg-[#0066FF]/10 text-[#0066FF]"
+                            : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
                             }`}
                     >
                         <ClipboardListIcon className="h-5 w-5" />
@@ -158,8 +156,8 @@ export function AdminSidebar({ mobileOpen, setMobileOpen }: { mobileOpen: boolea
                     <Link
                         href="/admin/settings"
                         className={`flex items-center gap-3 rounded-lg px-4 py-3 text-sm font-medium transition-colors ${isActive("/admin/settings")
-                                ? "bg-[#0066FF]/10 text-[#0066FF]"
-                                : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                            ? "bg-[#0066FF]/10 text-[#0066FF]"
+                            : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
                             }`}
                     >
                         <SettingsIcon className="h-5 w-5" />
