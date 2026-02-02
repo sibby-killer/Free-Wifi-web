@@ -5,7 +5,7 @@ import { requireUser, requireAdmin } from "@/lib/auth";
 // GET: Fetch notifications for the logged-in user
 export async function GET(req: NextRequest) {
     try {
-        const { user } = await requireUser();
+        const { userId } = await requireUser();
 
         // Fetch global notifications OR notifications specific to this user
         const notifications = await prisma.notification.findMany({
@@ -30,7 +30,7 @@ export async function GET(req: NextRequest) {
         // Let's refactor to fetch prisma user.
 
         const dbUser = await prisma.user.findUnique({
-            where: { clerkId: user.id } // user.id from Clerk is client.id
+            where: { clerkId: userId }
         });
 
         if (!dbUser) {
