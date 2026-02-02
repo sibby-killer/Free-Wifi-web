@@ -183,55 +183,56 @@ export async function GET() {
       { status: 500 }
     );
   }
+}
 
-  // PUT: Admin updates order status
-  export async function PUT(req: NextRequest) {
-    try {
-      const { user } = await requireAdmin();
-      const body = await req.json();
-      const { orderId, status } = body;
+// PUT: Admin updates order status
+export async function PUT(req: NextRequest) {
+  try {
+    const { user } = await requireAdmin();
+    const body = await req.json();
+    const { orderId, status } = body;
 
-      if (!orderId || !status) {
-        return NextResponse.json({ error: "Missing fields" }, { status: 400 });
-      }
+    if (!orderId || !status) {
+      return NextResponse.json({ error: "Missing fields" }, { status: 400 });
+    }
 
-      // Update Order
-      const updatedOrder = await prisma.order.update({
-        where: { id: orderId },
-        data: { status, adminNotes: `Updated by ${user.emailAddresses[0]?.emailAddress}` },
-        include: { user: true }
+    // Update Order
+    const updatedOrder = await prisma.order.update({
+      where: { id: orderId },
+      data: { status, adminNotes: `Updated by ${user.emailAddresses[0]?.emailAddress}` },
+      include: { user: true }
+    });
+
+    // If completed, update User Profile & Create Notification
+    if (status === "completed") {
+      const renewalDate = new Date();
+      renewalDate.setDate(renewalDate.getDate() + 30); // 30 days
+
+      await prisma.user.update({
+        where: { id: updatedOrder.userId },
+        data: {
+          currentPlan: updatedOrder.plan,
+          renewalDate: renewalDate
+        }
       });
 
-      // If completed, update User Profile & Create Notification
-      if (status === "completed") {
-        const renewalDate = new Date();
-        renewalDate.setDate(renewalDate.getDate() + 30); // 30 days
-
-        await prisma.user.update({
-          where: { id: updatedOrder.userId },
-          data: {
-            currentPlan: updatedOrder.plan,
-            renewalDate: renewalDate
-          }
-        });
-
-        await prisma.notification.create({
-          data: {
-            title: "Order Completed! ✅",
-            message: `Your ${updatedOrder.plan} is now active. Renewal date: ${renewalDate.toDateString()}.`,
-            type: "success",
-            userId: updatedOrder.userId,
-            isGlobal: false
-          }
-        });
-      }
-
-      return NextResponse.json({ success: true, order: updatedOrder });
-
-    } catch (error) {
-      console.error("Error updating order:", error);
-      return NextResponse.json({ error: "Unauthorized or Error" }, { status: 500 });
+      await prisma.notification.create({
+        data: {
+          title: "Order Completed! ✅",
+          message: `Your ${updatedOrder.plan} is now active. Renewal date: ${renewalDate.toDateString()}.`,
+          type: "success",
+          userId: updatedOrder.userId,
+          isGlobal: false
+        }
+      });
     }
+
+    return NextResponse.json({ success: true, order: updatedOrder });
+
+  } catch (error) {
+    console.error("Error updating order:", error);
+    return NextResponse.json({ error: "Unauthorized or Error" }, { status: 500 });
   }
+}
 
 

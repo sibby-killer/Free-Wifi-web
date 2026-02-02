@@ -116,20 +116,13 @@ export async function POST(req: NextRequest) {
 
         const msg = await prisma.chatMessage.create({
             data: {
-                data: {
-                    userId, // The target user's ID
-                    // role: "admin" is set below
-                    // ChatTab uses: `message.role === "user" ? ... : ...`.
-                    // So "admin" will fall into "AI" side (good).
-                    // But ChatTab: `{message.role === "user" ? "bg-[#00CC88]" : "bg-[#0066FF]"}`
-                    // And label `{message.role === "user" ? "U" : "AI"}`.
-                    // I might want to update ChatTab to show "Admin" if role is "admin".
-                    role: "admin",
-                    content: message,
-                    mentionAdmin: false,
-                    isRead: false
-                }
-            });
+                userId,
+                role: "admin",
+                content: message,
+                mentionAdmin: false,
+                isRead: false
+            }
+        });
 
         return NextResponse.json({ success: true, message: msg });
 
