@@ -7,42 +7,23 @@ export async function GET(req: NextRequest) {
     try {
         const { userId } = await requireUser();
 
-        // Fetch global notifications OR notifications specific to this user
-        const notifications = await prisma.notification.findMany({
-            where: {
-                OR: [
-                    { isGlobal: true },
-                    { userId: user.id }, // Note: Prisma User ID, not Clerk ID. 
-                    // Schema link: Order uses userId -> User.id. Notification uses userId.
-                    // Wait, User model has `clerkId`. 
-                    // Does `Notification.userId` refer to `User.id` (cuid) or `clerkId`?
-                    // Common practice in this app: Order.userId refs User.id.
-                    // BUT `requireUser` gives me Clerk User object from `auth()`.
-                    // I need to find the local Prisma/User ID.
-                ]
-            },
-            orderBy: { createdAt: "desc" },
-            take: 20
-        });
-
-        // Wait, I need the Prisma User ID. `requireUser` returns { auth, user (from Clerk) }.
-        // I should get the prisma user first.
-        // Let's refactor to fetch prisma user.
-
+        // 1. Get Prisma User ID from Clerk ID
         const dbUser = await prisma.user.findUnique({
             where: { clerkId: userId }
         });
 
         if (!dbUser) {
-            // If user not in DB (should be rare with sync), maybe return only global?
+            // Fallback: If user syncing is slow, only show global notifications
             const globalNotes = await prisma.notification.findMany({
                 where: { isGlobal: true },
-                orderBy: { createdAt: "desc" }
+                orderBy: { createdAt: "desc" },
+                take: 20
             });
             return NextResponse.json({ notifications: globalNotes });
         }
 
-        const notes = await prisma.notification.findMany({
+        // 2. Fetch notifications (Global OR Targeted to this User)
+        const notifications = await prisma.notification.findMany({
             where: {
                 OR: [
                     { isGlobal: true },
@@ -53,7 +34,7 @@ export async function GET(req: NextRequest) {
             take: 20
         });
 
-        return NextResponse.json({ notifications: notes });
+        return NextResponse.json({ notifications });
 
     } catch (error) {
         console.error("Error fetching notifications:", error);
