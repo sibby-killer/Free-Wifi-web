@@ -35,11 +35,14 @@ const ActionBtn = ({ label, href, color }: any) => (
 export default function AdminHomePage() {
   const [refreshing, setRefreshing] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [data, setData] = useState({
-    totalUsers: 0,
-    pendingOrders: 0,
-    openTickets: 0,
-    monthlyRevenue: 0
+  const [data, setData] = useState<any>({
+    stats: {
+      totalUsers: 0,
+      pendingOrders: 0,
+      openTickets: 0,
+      monthlyRevenue: 0
+    },
+    activity: []
   });
 
   const fetchStats = async () => {
